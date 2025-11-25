@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import axios from 'axios'
+import Image from 'next/image'
 
 interface Retailer {
   id: number
@@ -46,9 +47,7 @@ export default function ProductDetail() {
     const fetchProduct = async () => {
       try {
         setLoading(true)
-        const response = await axios.get(
-          `${API_URL}/api/products/${params.id}/`
-        )
+        const response = await axios.get(`${API_URL}/api/products/${params.id}/`)
         setProduct(response.data)
         setError(null)
       } catch (err) {
@@ -62,7 +61,7 @@ export default function ProductDetail() {
     if (params.id) {
       fetchProduct()
     }
-  }, [params.id])
+  }, [params.id, API_URL])
 
   if (loading) {
     return <div className="text-center py-8">Chargement...</div>
@@ -76,23 +75,22 @@ export default function ProductDetail() {
     )
   }
 
-  const sortedPrices = [...product.prices].sort(
-  (a, b) => a.price - b.price
-  )
-  
+  // Tri des prix du plus bas au plus élevé
+  const sortedPrices = [...product.prices].sort((a, b) => a.price - b.price)
   const minPrice = sortedPrices[0]
   const maxPrice = sortedPrices[sortedPrices.length - 1]
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
         {/* Product Image */}
-        <div className="aspect-square bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
+        <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
           {product.image ? (
-            <img
+            <Image
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover rounded-lg"
             />
           ) : (
             <div className="text-gray-400">Pas d&apos;image disponible</div>

@@ -22,7 +22,7 @@ class SaturnProduct(Document):
     url = URLField(required=True)
 
     meta = {
-        'collection': 'DB',
+        'collection': 'Db',
         'db_alias': 'default',
         'indexes': [
             'sku',

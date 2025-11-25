@@ -4,7 +4,7 @@ from .models import SaturnProduct, MediaMarktProduct
 
 class SaturnProductSerializer(serializers.Serializer):
     """Serializer for Saturn products"""
-    id = serializers.CharField(source='id', read_only=True)
+    id = serializers.CharField(read_only=True)
     sku = serializers.CharField(max_length=50, required=False)
     brand = serializers.CharField(max_length=255, required=False, allow_null=True)
     category = serializers.CharField(max_length=255)
@@ -22,7 +22,7 @@ class SaturnProductSerializer(serializers.Serializer):
 
 class MediaMarktProductSerializer(serializers.Serializer):
     """Serializer for MediaMarkt products"""
-    id = serializers.CharField(source='id', read_only=True)
+    id = serializers.CharField(read_only=True)
     sku = serializers.CharField(max_length=50, required=False)
     brand = serializers.CharField(max_length=255, required=False, allow_null=True)
     category = serializers.CharField(max_length=255)

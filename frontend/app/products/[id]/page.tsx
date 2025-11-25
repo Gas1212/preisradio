@@ -62,6 +62,7 @@ export default function ProductDetail() {
     if (params.id) {
       fetchProduct()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   if (loading) {
@@ -77,7 +78,7 @@ export default function ProductDetail() {
   }
 
   const sortedPrices = [...product.prices].sort(
-    (a, b) => parseFloat(a.price) - parseFloat(b.price)
+    (a, b) => a.price - b.price
   )
   const minPrice = sortedPrices[0]
   const maxPrice = sortedPrices[sortedPrices.length - 1]

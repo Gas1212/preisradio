@@ -89,57 +89,43 @@ DATABASES = {
 # MongoDB Configuration
 import mongoengine
 
-def _get_mongodb_uri(host, port, db_name, username, password, auth_source):
-    """Build MongoDB URI for both Atlas and standard connections"""
-    # Detect MongoDB Atlas by checking for .mongodb.net domain
-    is_atlas = '.mongodb.net' in host
+# Get MongoDB URIs and database names from environment variables
+# Saturn Database Configuration
+SATURN_URI = os.getenv('MONGODB_SATURN_URI', 'mongodb+srv://stronglimitless76_db_user:XkH6zK9tcANup38i@cluster0.pzd9gka.mongodb.net/')
+SATURN_DB = os.getenv('MONGODB_SATURN_DB', 'Saturn')
+SATURN_COLLECTION = os.getenv('MONGODB_SATURN_COLLECTION', 'Db')
 
-    if username and password:
-        if is_atlas:
-            # MongoDB Atlas: use mongodb+srv:// protocol (no port needed)
-            uri = f"mongodb+srv://{username}:{password}@{host}/{db_name}?authSource={auth_source}&retryWrites=true&w=majority"
-        else:
-            # Standard MongoDB connection
-            uri = f"mongodb://{username}:{password}@{host}:{port}/{db_name}?authSource={auth_source}&retryWrites=true"
-        return uri
-    else:
-        # No authentication (local development)
-        if is_atlas:
-            return f"mongodb+srv://{host}/{db_name}"
-        return f"mongodb://{host}:{port}/{db_name}"
+# MediaMarkt Database Configuration
+MEDIAMARKT_URI = os.getenv('MONGODB_MEDIAMARKT_URI', 'mongodb+srv://stronglimitless76_db_user:oLZm2SKrgK5ZskXv@mediamarkt.iwjamu6.mongodb.net/')
+MEDIAMARKT_DB = os.getenv('MONGODB_MEDIAMARKT_DB', 'Mediamarkt')
+MEDIAMARKT_COLLECTION = os.getenv('MONGODB_MEDIAMARKT_COLLECTION', 'Db')
 
-# Saturn Database Connection
-SATURN_URI = _get_mongodb_uri(
-    host=os.getenv('SATURN_MONGODB_HOST', 'cluster0.pzd9gka.mongodb.net'),
-    port=int(os.getenv('SATURN_MONGODB_PORT', 27017)),
-    db_name=os.getenv('SATURN_MONGODB_DB_NAME', 'Saturn'),
-    username=os.getenv('MONGODB_USER', None),
-    password=os.getenv('MONGODB_PASSWORD', None),
-    auth_source=os.getenv('MONGODB_AUTH_SOURCE', 'admin'),
-)
+# Build full URIs with database names
+SATURN_FULL_URI = f"{SATURN_URI}{SATURN_DB}?retryWrites=true&w=majority"
+MEDIAMARKT_FULL_URI = f"{MEDIAMARKT_URI}{MEDIAMARKT_DB}?retryWrites=true&w=majority"
 
-# MediaMarkt Database Connection
-MEDIAMARKT_URI = _get_mongodb_uri(
-    host=os.getenv('MEDIAMARKT_MONGODB_HOST', 'mediamarkt.iwjamu6.mongodb.net'),
-    port=int(os.getenv('MEDIAMARKT_MONGODB_PORT', 27017)),
-    db_name=os.getenv('MEDIAMARKT_MONGODB_DB_NAME', 'Mediamarkt'),
-    username=os.getenv('MONGODB_USER', None),
-    password=os.getenv('MONGODB_PASSWORD', None),
-    auth_source=os.getenv('MONGODB_AUTH_SOURCE', 'admin'),
-)
+# Print configuration for debugging
+print(f"📊 MongoDB Configuration:")
+print(f"   Saturn DB: {SATURN_DB}, Collection: {SATURN_COLLECTION}")
+print(f"   MediaMarkt DB: {MEDIAMARKT_DB}, Collection: {MEDIAMARKT_COLLECTION}")
 
 # Initialize MongoDB connections
+# Disconnect existing connections to avoid duplicate registration errors
 try:
-    # Disconnect any existing connections first
-    mongoengine.disconnect_all()
+    mongoengine.disconnect(alias='default')
 except:
     pass
 
 try:
-    # Saturn connection (default)
+    mongoengine.disconnect(alias='mediamarkt')
+except:
+    pass
+
+# Connect to Saturn database
+try:
     mongoengine.connect(
-        'default',
-        host=SATURN_URI,
+        alias='default',
+        host=SATURN_FULL_URI,
         connectTimeoutMS=10000,
         serverSelectionTimeoutMS=10000,
         socketTimeoutMS=10000,
@@ -147,13 +133,13 @@ try:
     )
     print("✓ Saturn database connected successfully")
 except Exception as e:
-    print(f"✗ Warning: Saturn database connection failed: {e}")
+    print(f"✗ Saturn database connection failed: {e}")
 
+# Connect to MediaMarkt database
 try:
-    # MediaMarkt connection
     mongoengine.connect(
-        'Mediamarkt',
-        host=MEDIAMARKT_URI,
+        alias='mediamarkt',
+        host=MEDIAMARKT_FULL_URI,
         connectTimeoutMS=10000,
         serverSelectionTimeoutMS=10000,
         socketTimeoutMS=10000,
@@ -161,7 +147,7 @@ try:
     )
     print("✓ MediaMarkt database connected successfully")
 except Exception as e:
-    print(f"✗ Warning: MediaMarkt database connection failed: {e}")
+    print(f"✗ MediaMarkt database connection failed: {e}")
 
 
 # Password validation

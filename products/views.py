@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from mongoengine.queryset.visitor import Q
 from .models import SaturnProduct, MediaMarktProduct
 from .serializers import (
     SaturnProductSerializer,
@@ -64,26 +65,35 @@ class ProductViewSet(viewsets.ViewSet):
         """List products from both retailers with filtering and search"""
         search = request.query_params.get('search', '')
         category = request.query_params.get('category', '')
-        retailer = request.query_params.get('retailer', 'all')  # all, saturn, mediamarkt
+        retailer = request.query_params.get('retailer', 'all').lower()  # normalize to lowercase
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 20))
 
         # Get products from requested retailers
         products = []
 
+        # If querying all retailers, limit to prevent loading entire database
+        # For single retailer, use MongoDB pagination
         if retailer in ['all', 'saturn']:
             saturn_query = SaturnProduct.objects()
             if category:
                 saturn_query = saturn_query.filter(category=category)
             if search:
                 saturn_query = saturn_query.filter(
-                    title__icontains=search
-                ) | saturn_query.filter(
-                    gtin__icontains=search
-                ) | saturn_query.filter(
-                    description__icontains=search
+                    Q(title__icontains=search) |
+                    Q(gtin__icontains=search) |
+                    Q(description__icontains=search)
                 )
-            products.extend([(p, 'saturn') for p in saturn_query.order_by('-scraped_at')])
+
+            # Apply pagination at MongoDB level for single retailer
+            if retailer == 'saturn':
+                start = (page - 1) * page_size
+                saturn_results = list(saturn_query.order_by('-scraped_at').skip(start).limit(page_size))
+                products.extend([(p, 'saturn') for p in saturn_results])
+            else:
+                # For 'all', limit to avoid loading entire database
+                saturn_results = list(saturn_query.order_by('-scraped_at').limit(1000))
+                products.extend([(p, 'saturn') for p in saturn_results])
 
         if retailer in ['all', 'mediamarkt']:
             mediamarkt_query = MediaMarktProduct.objects()
@@ -91,21 +101,36 @@ class ProductViewSet(viewsets.ViewSet):
                 mediamarkt_query = mediamarkt_query.filter(category=category)
             if search:
                 mediamarkt_query = mediamarkt_query.filter(
-                    title__icontains=search
-                ) | mediamarkt_query.filter(
-                    gtin__icontains=search
-                ) | mediamarkt_query.filter(
-                    description__icontains=search
+                    Q(title__icontains=search) |
+                    Q(gtin__icontains=search) |
+                    Q(description__icontains=search)
                 )
-            products.extend([(p, 'mediamarkt') for p in mediamarkt_query.order_by('-scraped_at')])
 
-        # Sort combined results by scraped_at
-        products.sort(key=lambda x: x[0].scraped_at or '', reverse=True)
+            # Apply pagination at MongoDB level for single retailer
+            if retailer == 'mediamarkt':
+                start = (page - 1) * page_size
+                mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').skip(start).limit(page_size))
+                products.extend([(p, 'mediamarkt') for p in mediamarkt_results])
+            else:
+                # For 'all', limit to avoid loading entire database
+                mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(1000))
+                products.extend([(p, 'mediamarkt') for p in mediamarkt_results])
 
-        total_count = len(products)
-        start = (page - 1) * page_size
-        end = start + page_size
-        page_products = products[start:end]
+        # For 'all' retailer, sort combined results and paginate
+        if retailer == 'all':
+            products.sort(key=lambda x: x[0].scraped_at or '', reverse=True)
+            total_count = len(products)
+            start = (page - 1) * page_size
+            end = start + page_size
+            page_products = products[start:end]
+        else:
+            # For single retailer, already paginated
+            page_products = products
+            # Get accurate count for single retailer
+            if retailer == 'saturn':
+                total_count = SaturnProduct.objects.count() if not category and not search else saturn_query.count()
+            else:
+                total_count = MediaMarktProduct.objects.count() if not category and not search else mediamarkt_query.count()
 
         # Serialize results
         results = []
@@ -118,9 +143,15 @@ class ProductViewSet(viewsets.ViewSet):
             data['retailer'] = source
             results.append(data)
 
+        # Calculate pagination links
+        if retailer == 'all':
+            has_next = end < total_count
+        else:
+            has_next = (page * page_size) < total_count
+
         return Response({
             'count': total_count,
-            'next': f'/api/products/?page={page + 1}' if end < total_count else None,
+            'next': f'/api/products/?page={page + 1}' if has_next else None,
             'previous': f'/api/products/?page={page - 1}' if page > 1 else None,
             'results': results
         })

@@ -71,7 +71,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             {lowestPrice !== null ? (
               <>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  À partir de
+                  Ab
                 </p>
                 <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {lowestPrice.toFixed(2)} €
@@ -79,22 +79,22 @@ export default function ProductCard({ product }: ProductCardProps) {
               </>
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Prix non disponible
+                Preis nicht verfügbar
               </p>
             )}
           </div>
 
           <div className="text-right">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {availableRetailers} {availableRetailers > 1 ? 'vendeurs' : 'vendeur'}
+              {availableRetailers} {availableRetailers > 1 ? 'Händler' : 'Händler'}
             </p>
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-              Comparer →
+              Vergleichen →
             </p>
           </div>
         </div>
 
-        {/* Badge "Nouveau" si produit récent */}
+        {/* Badge "Neu" si produit récent */}
         {(() => {
           const createdDate = new Date(product.created_at);
           const daysSinceCreation = Math.floor(
@@ -102,7 +102,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           );
           return daysSinceCreation < 7 ? (
             <div className="absolute right-4 top-4 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
-              Nouveau
+              Neu
             </div>
           ) : null;
         })()}

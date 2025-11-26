@@ -35,11 +35,11 @@ export default function HaendlerPage() {
   // Calculer les stats pour chaque détaillant
   const retailersWithStats = retailers.map((retailer) => {
     const productsCount = products.filter((product) =>
-      product.prices.some((price) => price.retailer.id === retailer.id)
+      product.prices?.some((price) => price.retailer.id === retailer.id)
     ).length;
 
     const prices = products.flatMap((product) =>
-      product.prices.filter((price) => price.retailer.id === retailer.id)
+      product.prices?.filter((price) => price.retailer.id === retailer.id) || []
     );
 
     const averagePrice =
@@ -171,7 +171,7 @@ export default function HaendlerPage() {
                       Preise verglichen
                     </p>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                      {products.reduce((acc, p) => acc + p.prices.length, 0)}
+                      {products.reduce((acc, p) => acc + (p.prices?.length || 0), 0)}
                     </p>
                   </div>
                   <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">

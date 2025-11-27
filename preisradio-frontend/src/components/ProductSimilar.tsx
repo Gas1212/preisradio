@@ -10,7 +10,7 @@ interface ProductSimilarProps {
 }
 
 export default function ProductSimilar({ productId }: ProductSimilarProps) {
-  const [similar, setSimilar] = useState<any[]>([]);
+  const [similar, setSimilar] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,13 +45,6 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
     return null;
   }
 
-  const getLowestPrice = (product: any) => {
-    if (!product.prices || product.prices.length === 0) {
-      return null;
-    }
-    return Math.min(...product.prices.map((p: any) => p.price));
-  };
-
   return (
     <div className="mt-12 rounded-xl bg-white p-8 shadow-lg dark:bg-zinc-900">
       <div className="mb-8">
@@ -65,10 +58,9 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {similar.map((product) => {
-          const lowestPrice = getLowestPrice(product);
-          const availableRetailers = product.prices
-            ? product.prices.filter((p: any) => p.stock_status === 'in_stock').length
-            : 0;
+          const currentPrice = product.price;
+          const oldPrice = product.old_price;
+          const hasDiscount = oldPrice && oldPrice > currentPrice;
 
           return (
             <Link key={product.id} href={`/product/${product.id}`}>
@@ -78,7 +70,7 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
                   {product.image ? (
                     <img
                       src={product.image}
-                      alt={product.title || 'Product'}
+                      alt={product.title}
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                     />
                   ) : (
@@ -112,35 +104,43 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
                     {product.title}
                   </h3>
 
-                  {/* Price & Stock */}
+                  {/* Price */}
                   <div className="mt-4 flex items-end justify-between border-t border-gray-100 pt-4 dark:border-zinc-800">
                     <div>
-                      {lowestPrice !== null ? (
-                        <>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            À partir de
-                          </p>
-                          <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                            {lowestPrice.toFixed(2)} €
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Prix non disponible
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Prix
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                          {currentPrice.toFixed(2)} {product.currency}
                         </p>
-                      )}
+                        {hasDiscount && oldPrice && (
+                          <p className="text-xs text-gray-500 line-through dark:text-gray-400">
+                            {oldPrice.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="text-right">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {availableRetailers} vendeur{availableRetailers > 1 ? 's' : ''}
-                      </p>
+                      {product.brand && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {product.brand}
+                        </p>
+                      )}
                       <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
                         Voir →
                       </p>
                     </div>
                   </div>
                 </div>
+
+                {/* Badge de réduction */}
+                {hasDiscount && product.discount && (
+                  <div className="absolute right-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white">
+                    {product.discount}
+                  </div>
+                )}
               </div>
             </Link>
           );

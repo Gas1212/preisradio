@@ -6,15 +6,10 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Trouver le prix le plus bas
-  const lowestPrice = product.prices && product.prices.length > 0
-    ? Math.min(...product.prices.map(p => p.price))
-    : null;
-
-  // Compter les détaillants disponibles
-  const availableRetailers = product.prices
-    ? product.prices.filter(p => p.stock_status === 'in_stock').length
-    : 0;
+  // Prix actuel
+  const currentPrice = product.price;
+  const oldPrice = product.old_price;
+  const hasDiscount = oldPrice && oldPrice > currentPrice;
 
   return (
     <Link href={`/product/${product.id}`}>
@@ -24,7 +19,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.image ? (
             <img
               src={product.image}
-              alt={product.name}
+              alt={product.title}
               className="h-full w-full object-cover transition-transform group-hover:scale-105"
             />
           ) : (
@@ -55,7 +50,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Nom du produit */}
         <h3 className="mb-2 line-clamp-2 text-lg font-semibold text-gray-900 dark:text-white">
-          {product.name}
+          {product.title}
         </h3>
 
         {/* Description courte */}
@@ -68,39 +63,47 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Prix et disponibilité */}
         <div className="flex items-end justify-between border-t border-gray-100 pt-4 dark:border-zinc-800">
           <div>
-            {lowestPrice !== null ? (
-              <>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Ab
-                </p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {lowestPrice.toFixed(2)} €
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Preis nicht verfügbar
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Preis
+            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {currentPrice.toFixed(2)} {product.currency}
               </p>
-            )}
+              {hasDiscount && oldPrice && (
+                <p className="text-sm text-gray-500 line-through dark:text-gray-400">
+                  {oldPrice.toFixed(2)} {product.currency}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="text-right">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {availableRetailers} {availableRetailers > 1 ? 'Händler' : 'Händler'}
-            </p>
+            {product.brand && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {product.brand}
+              </p>
+            )}
             <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-              Vergleichen →
+              Details ansehen →
             </p>
           </div>
         </div>
 
+        {/* Badge de réduction */}
+        {hasDiscount && product.discount && (
+          <div className="absolute right-4 top-4 rounded-full bg-red-500 px-3 py-1 text-xs font-semibold text-white">
+            {product.discount}
+          </div>
+        )}
+
         {/* Badge "Neu" si produit récent */}
-        {(() => {
-          const createdDate = new Date(product.created_at);
-          const daysSinceCreation = Math.floor(
-            (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+        {!hasDiscount && product.scraped_at && (() => {
+          const scrapedDate = new Date(product.scraped_at);
+          const daysSinceScraping = Math.floor(
+            (Date.now() - scrapedDate.getTime()) / (1000 * 60 * 60 * 24)
           );
-          return daysSinceCreation < 7 ? (
+          return daysSinceScraping < 7 ? (
             <div className="absolute right-4 top-4 rounded-full bg-green-500 px-3 py-1 text-xs font-semibold text-white">
               Neu
             </div>

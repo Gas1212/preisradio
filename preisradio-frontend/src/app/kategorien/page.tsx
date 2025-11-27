@@ -51,6 +51,7 @@ export default function KategorienPage() {
 
   function getCategoryIcon(category: string): string {
     const icons: { [key: string]: string } = {
+      // Catégories en français (legacy)
       'Smartphones': '📱',
       'Ordinateurs portables': '💻',
       'Audio': '🎧',
@@ -61,12 +62,40 @@ export default function KategorienPage() {
       'Électroménager': '🏠',
       'Photo': '📷',
       'Moniteurs': '🖥️',
+
+      // Catégories allemandes communes
+      'Handys & Smartphones': '📱',
+      'Notebooks & Computer': '💻',
+      'Laptops': '💻',
+      'TV & Audio': '📺',
+      'Fernseher': '📺',
+      'Kopfhörer': '🎧',
+      'Lautsprecher': '🔊',
+      'Tablets': '📱',
+      'Smartwatches': '⌚',
+      'Wearables': '⌚',
+      'Gaming': '🎮',
+      'Spielekonsolen': '🎮',
+      'Kameras': '📷',
+      'Foto & Video': '📷',
+      'Smart Home': '🏠',
+      'Haushaltsgeräte': '🏠',
+      'Kühlschränke': '❄️',
+      'Waschmaschinen': '🧺',
+      'PC-Komponenten': '🖥️',
+      'Grafikkarten': '🎮',
+      'Prozessoren': '⚡',
+      'Monitore': '🖥️',
+      'Drucker': '🖨️',
+      'Zubehör': '🔌',
+      'Software': '💿',
     };
     return icons[category] || '📦';
   }
 
   function getCategoryDescription(category: string): string {
     const descriptions: { [key: string]: string } = {
+      // Catégories en français (legacy)
       'Smartphones': 'Die neuesten Smartphones von Samsung, Apple, Xiaomi und mehr',
       'Ordinateurs portables': 'Laptops für jeden Bedarf - Gaming, Business, Multimedia',
       'Audio': 'Kopfhörer, Lautsprecher und Audio-Zubehör',
@@ -77,8 +106,35 @@ export default function KategorienPage() {
       'Électroménager': 'Haushaltsgeräte für Küche und Haushalt',
       'Photo': 'Kameras, Objektive und Foto-Zubehör',
       'Moniteurs': 'Monitore für Gaming, Office und kreative Arbeit',
+
+      // Catégories allemandes communes
+      'Handys & Smartphones': 'Die neuesten Smartphones von Samsung, Apple, Xiaomi und mehr',
+      'Notebooks & Computer': 'Laptops und Computer für jeden Bedarf',
+      'Laptops': 'Laptops für Gaming, Business und Multimedia',
+      'TV & Audio': 'Fernseher, Soundbars und Audio-Systeme',
+      'Fernseher': 'Smart-TVs, OLED, QLED in allen Größen',
+      'Kopfhörer': 'Kabellose und kabelgebundene Kopfhörer',
+      'Lautsprecher': 'Bluetooth-Lautsprecher und Soundsysteme',
+      'Tablets': 'Tablets für Entertainment und Produktivität',
+      'Smartwatches': 'Smartwatches und Fitness-Tracker',
+      'Wearables': 'Smartwatches, Fitness-Tracker und mehr',
+      'Gaming': 'Gaming-Zubehör und Peripheriegeräte',
+      'Spielekonsolen': 'PlayStation, Xbox, Nintendo Switch',
+      'Kameras': 'Digitalkameras und Objektive',
+      'Foto & Video': 'Kameras, Objektive und Foto-Zubehör',
+      'Smart Home': 'Intelligente Geräte für Ihr Zuhause',
+      'Haushaltsgeräte': 'Geräte für Küche und Haushalt',
+      'Kühlschränke': 'Kühl- und Gefrierschränke',
+      'Waschmaschinen': 'Waschmaschinen und Trockner',
+      'PC-Komponenten': 'Hardware-Komponenten für Ihren PC',
+      'Grafikkarten': 'Grafikkarten für Gaming und Rendering',
+      'Prozessoren': 'CPUs von Intel, AMD und mehr',
+      'Monitore': 'Monitore für Gaming, Office und Design',
+      'Drucker': 'Drucker und Multifunktionsgeräte',
+      'Zubehör': 'Diverses Zubehör für Elektronik',
+      'Software': 'Software und digitale Downloads',
     };
-    return descriptions[category] || 'Entdecken Sie unsere Produkte';
+    return descriptions[category] || 'Entdecken Sie unsere Produkte in dieser Kategorie';
   }
 
   return (

@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Product } from '@/lib/types';
 import api from '@/lib/api';
-import PriceComparison from '@/components/PriceComparison';
 import ProductSimilar from '@/components/ProductSimilar';
 
 export default function ProductDetail() {
@@ -86,17 +85,12 @@ export default function ProductDetail() {
     );
   }
 
-  const lowestPrice = product.prices.length > 0
-    ? Math.min(...product.prices.map(p => p.price))
-    : null;
-
-  const highestPrice = product.prices.length > 0
-    ? Math.max(...product.prices.map(p => p.price))
-    : null;
-
-  const averagePrice = product.prices.length > 0
-    ? product.prices.reduce((acc, p) => acc + p.price, 0) / product.prices.length
-    : null;
+  // Calculer le prix et la réduction si applicable
+  const currentPrice = product.price;
+  const oldPrice = product.old_price;
+  const hasDiscount = oldPrice && oldPrice > currentPrice;
+  const discountAmount = hasDiscount ? oldPrice - currentPrice : 0;
+  const discountPercent = hasDiscount ? ((discountAmount / oldPrice) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
@@ -140,7 +134,7 @@ export default function ProductDetail() {
           <span className="text-gray-400">/</span>
           <span className="text-gray-600 dark:text-gray-400">{product.category}</span>
           <span className="text-gray-400">/</span>
-          <span className="text-gray-900 dark:text-white">{product.name}</span>
+          <span className="text-gray-900 dark:text-white">{product.title}</span>
         </nav>
 
         {/* Product Info */}
@@ -151,7 +145,7 @@ export default function ProductDetail() {
               {product.image ? (
                 <img
                   src={product.image}
-                  alt={product.name}
+                  alt={product.title}
                   className="h-full w-full object-contain"
                 />
               ) : (
@@ -185,8 +179,15 @@ export default function ProductDetail() {
 
             {/* Title */}
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              {product.name}
+              {product.title}
             </h1>
+
+            {/* Brand */}
+            {product.brand && (
+              <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
+                {product.brand}
+              </p>
+            )}
 
             {/* Description */}
             {product.description && (
@@ -195,137 +196,60 @@ export default function ProductDetail() {
               </p>
             )}
 
-            {/* EAN */}
-            <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Code EAN</p>
-              <p className="mt-1 font-mono text-lg font-semibold text-gray-900 dark:text-white">
-                {product.ean}
-              </p>
-            </div>
-
-            {/* Price Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-lg bg-green-50 p-4 dark:bg-green-950">
-                <p className="text-xs text-gray-600 dark:text-gray-400">Prix le plus bas</p>
-                <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
-                  {lowestPrice !== null ? `${lowestPrice.toFixed(2)} €` : 'N/A'}
+            {/* GTIN/EAN */}
+            {product.gtin && (
+              <div className="rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+                <p className="text-sm text-gray-600 dark:text-gray-400">Code EAN/GTIN</p>
+                <p className="mt-1 font-mono text-lg font-semibold text-gray-900 dark:text-white">
+                  {product.gtin}
                 </p>
-              </div>
-
-              <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950">
-                <p className="text-xs text-gray-600 dark:text-gray-400">Prix moyen</p>
-                <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  {averagePrice !== null ? `${averagePrice.toFixed(2)} €` : 'N/A'}
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-orange-50 p-4 dark:bg-orange-950">
-                <p className="text-xs text-gray-600 dark:text-gray-400">Prix le plus haut</p>
-                <p className="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {highestPrice !== null ? `${highestPrice.toFixed(2)} €` : 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {/* Savings */}
-            {lowestPrice !== null && highestPrice !== null && lowestPrice !== highestPrice && (
-              <div className="rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm opacity-90">Économisez jusqu'à</p>
-                    <p className="mt-1 text-3xl font-bold">
-                      {(highestPrice - lowestPrice).toFixed(2)} €
-                    </p>
-                    <p className="mt-1 text-sm opacity-90">
-                      soit {(((highestPrice - lowestPrice) / highestPrice) * 100).toFixed(0)}% de réduction
-                    </p>
-                  </div>
-                  <svg
-                    className="h-16 w-16 opacity-50"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Price Comparison */}
-        <div className="rounded-xl bg-white p-8 shadow-lg dark:bg-zinc-900">
-          <PriceComparison prices={product.prices} />
-        </div>
-
-        {/* Similar Products */}
-        <ProductSimilar productId={params.id as string} />
-
-        {/* Product Metadata */}
-        <div className="mt-8 rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-            Informations sur le produit
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
-              <svg
-                className="h-5 w-5 text-gray-600 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Ajouté le</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {new Date(product.created_at).toLocaleDateString('fr-FR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
+            {/* Prix */}
+            <div className="rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 p-6 dark:from-zinc-800 dark:to-zinc-800">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Prix actuel</p>
+                  <div className="flex items-baseline gap-3">
+                    <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
+                      {currentPrice.toFixed(2)} {product.currency}
+                    </p>
+                    {hasDiscount && oldPrice && (
+                      <p className="text-xl text-gray-500 line-through dark:text-gray-400">
+                        {oldPrice.toFixed(2)} {product.currency}
+                      </p>
+                    )}
+                  </div>
+                  {product.discount && (
+                    <p className="mt-2 inline-block rounded-full bg-red-500 px-3 py-1 text-sm font-semibold text-white">
+                      {product.discount}
+                    </p>
+                  )}
+                </div>
+                {hasDiscount && (
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Économie</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      -{discountAmount.toFixed(2)} {product.currency}
+                    </p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      -{discountPercent.toFixed(0)}%
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+            {/* Bouton d'achat */}
+            <a
+              href={product.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white transition-all hover:from-blue-700 hover:to-purple-700 hover:shadow-lg"
+            >
               <svg
-                className="h-5 w-5 text-gray-600 dark:text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Mis à jour le</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {new Date(product.updated_at).toLocaleDateString('fr-FR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
-              <svg
-                className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                className="h-6 w-6"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -337,13 +261,84 @@ export default function ProductDetail() {
                   d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                 />
               </svg>
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Vendeurs disponibles</p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {product.prices.length} {product.prices.length > 1 ? 'vendeurs' : 'vendeur'}
-                </p>
+              Voir le produit
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
+          </div>
+        </div>
+
+        {/* Similar Products */}
+        <ProductSimilar productId={params.id as string} />
+
+        {/* Product Metadata */}
+        <div className="mt-8 rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
+            Informations sur le produit
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {product.sku && (
+              <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+                <svg
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
+                  />
+                </svg>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">SKU</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {product.sku}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
+
+            {product.scraped_at && (
+              <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
+                <svg
+                  className="h-5 w-5 text-gray-600 dark:text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Dernière mise à jour</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {new Date(product.scraped_at).toLocaleDateString('fr-FR', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center space-x-3 rounded-lg bg-gray-50 p-4 dark:bg-zinc-800">
               <svg
@@ -356,13 +351,13 @@ export default function ProductDetail() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">En stock</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Devise</p>
                 <p className="font-medium text-gray-900 dark:text-white">
-                  {product.prices.filter(p => p.stock_status === 'in_stock').length} / {product.prices.length}
+                  {product.currency}
                 </p>
               </div>
             </div>

@@ -17,16 +17,23 @@ export interface Price {
   last_checked: string;
 }
 
+// Product interface qui correspond à la structure réelle du backend (Saturn/MediaMarkt)
 export interface Product {
   id: string;
-  ean: string;
-  name: string;
-  description?: string;
+  sku?: string;
+  brand?: string;
   category: string;
+  currency: string;
+  description?: string;
+  discount?: string;
+  gtin?: string;  // EAN/GTIN code
   image?: string;
-  prices: Price[];
-  created_at: string;
-  updated_at: string;
+  old_price?: number;
+  price: number;  // Prix unique (pas un tableau)
+  scraped_at?: string;
+  title: string;  // Nom du produit
+  url: string;  // URL vers le produit sur le site du retailer
+  retailer?: string;  // Retailer source: 'saturn' ou 'mediamarkt'
 }
 
 export interface ApiResponse<T> {

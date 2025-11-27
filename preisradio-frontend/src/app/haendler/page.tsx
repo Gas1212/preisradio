@@ -34,25 +34,26 @@ export default function HaendlerPage() {
 
   // Calculer les stats pour chaque détaillant
   const retailersWithStats = retailers.map((retailer) => {
-    const productsCount = products.filter((product) =>
-      product.prices?.some((price) => price.retailer.id === retailer.id)
-    ).length;
-
-    const prices = products.flatMap((product) =>
-      product.prices?.filter((price) => price.retailer.id === retailer.id) || []
+    // Filtrer les produits de ce retailer
+    const retailerProducts = products.filter((product) =>
+      product.retailer === retailer.id
     );
 
+    const productsCount = retailerProducts.length;
+
+    // Calculer le prix moyen
     const averagePrice =
-      prices.length > 0
-        ? prices.reduce((acc, price) => acc + price.price, 0) / prices.length
+      retailerProducts.length > 0
+        ? retailerProducts.reduce((acc, product) => acc + product.price, 0) / retailerProducts.length
         : 0;
 
-    const inStockCount = prices.filter((p) => p.stock_status === 'in_stock').length;
+    // Dans le nouveau modèle, tous les produits sont "en stock" car ils viennent directement du site
+    const inStockCount = productsCount;
 
     return {
       ...retailer,
       productsCount,
-      pricesCount: prices.length,
+      pricesCount: productsCount,  // Dans le nouveau modèle, 1 produit = 1 prix
       averagePrice,
       inStockCount,
     };
@@ -168,10 +169,10 @@ export default function HaendlerPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Preise verglichen
+                      Produkte insgesamt
                     </p>
                     <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                      {products.reduce((acc, p) => acc + (p.prices?.length || 0), 0)}
+                      {products.length}
                     </p>
                   </div>
                   <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">

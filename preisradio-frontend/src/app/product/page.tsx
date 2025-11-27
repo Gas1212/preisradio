@@ -178,12 +178,12 @@ export default function Home() {
           <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Preise</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Händler</p>
                 <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                  {products.reduce((acc, p) => acc + (p.prices?.length || 0), 0)}
+                  {new Set(products.map(p => p.retailer).filter(Boolean)).size || 2}
                 </p>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                  Aktuell verglichen
+                  Saturn & MediaMarkt
                 </p>
               </div>
               <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">

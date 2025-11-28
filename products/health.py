@@ -40,7 +40,7 @@ def api_status(request):
                     'mediamarkt': mediamarkt_count,
                 },
                 'retailers': 2,  # Saturn et MediaMarkt
-            }
+            },
 
             'dependencies': {
                 'mongodb': 'connected',

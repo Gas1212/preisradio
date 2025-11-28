@@ -8,13 +8,14 @@ export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Scroll to top and navigate to home with search
-      router.push(`/?search=${encodeURIComponent(searchQuery)}`);
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
       setSearchQuery('');
+      setMobileMenuOpen(false);
     }
   };
 
@@ -27,12 +28,20 @@ export default function Navigation() {
 
   const isActive = (path: string) => pathname === path;
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-3">
+          <Link
+            href="/"
+            className="flex items-center space-x-3"
+            onClick={() => setMobileMenuOpen(false)}
+          >
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-xl font-bold text-white shadow-lg">
               P
             </div>
@@ -96,24 +105,44 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="md:hidden rounded-lg p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800">
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+          <button
+            onClick={toggleMobileMenu}
+            className="md:hidden rounded-lg p-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            )}
           </button>
         </div>
 
-        {/* Search Bar Mobile */}
+        {/* Search Bar Mobile - Always visible on mobile */}
         <div className="pb-4 lg:hidden">
           <form onSubmit={handleSearch} className="relative">
             <input
@@ -144,8 +173,31 @@ export default function Navigation() {
           </form>
         </div>
 
-        {/* Mobile Navigation */}
-        <nav className="flex md:hidden overflow-x-auto pb-4 scrollbar-hide">
+        {/* Mobile Menu Dropdown */}
+        {mobileMenuOpen && (
+          <nav className="md:hidden border-t border-gray-200 dark:border-zinc-800 py-4 animate-fadeIn">
+            <div className="flex flex-col space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                    isActive(link.href)
+                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  <span className="text-xl">{link.icon}</span>
+                  <span>{link.label}</span>
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
+
+        {/* Desktop Horizontal Navigation (for very small desktop screens) */}
+        <nav className="hidden md:flex lg:hidden overflow-x-auto pb-4 scrollbar-hide">
           <div className="flex space-x-2">
             {navLinks.map((link) => (
               <Link

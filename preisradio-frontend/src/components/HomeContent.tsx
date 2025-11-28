@@ -15,37 +15,32 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
   const searchParams = useSearchParams();
   const urlSearchQuery = searchParams.get('search') || '';
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [topDeals, setTopDeals] = useState<Product[]>([]);
+  const [smartphones, setSmartphones] = useState<Product[]>([]);
+  const [laptops, setLaptops] = useState<Product[]>([]);
+  const [tvs, setTvs] = useState<Product[]>([]);
+  const [accessories, setAccessories] = useState<Product[]>([]);
+  const [gaming, setGaming] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
-  // Charger les catégories si pas fournis
+  useEffect(() => {
+    loadAllSections();
+  }, []);
+
   useEffect(() => {
     if (initialCategories.length === 0) {
       loadCategories();
     }
   }, []);
 
-  // Charger les produits si query search change depuis navbar
   useEffect(() => {
     if (urlSearchQuery && urlSearchQuery !== searchQuery) {
       setSearchQuery(urlSearchQuery);
-      setCurrentPage(1);
-      loadProducts(1);
     }
   }, [urlSearchQuery]);
-
-  // Charger les produits quand la catégorie change
-  useEffect(() => {
-    setCurrentPage(1);
-    loadProducts(1);
-  }, [selectedCategory]);
 
   const loadCategories = async () => {
     try {
@@ -56,51 +51,105 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
     }
   };
 
-  const loadProducts = async (page: number = 1) => {
-    try {
-      if (page === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-      setError(null);
+  const loadAllSections = async () => {
+    setLoading(true);
+    setError(null);
 
-      const response = await api.getProducts({
-        search: searchQuery || undefined,
-        category: selectedCategory || undefined,
-        page: page,
-        page_size: 50,
+    try {
+      // Charger toutes les sections en parallèle
+      const [
+        allProductsRes,
+        smartphonesRes,
+        laptopsRes,
+        tvsRes,
+        accessoriesRes,
+        gamingRes
+      ] = await Promise.all([
+        api.getProducts({ page_size: 100 }),
+        api.getProducts({ category: 'Smartphones', page_size: 8 }),
+        api.getProducts({ category: 'Laptops', page_size: 8 }),
+        api.getProducts({ category: 'Fernseher', page_size: 8 }),
+        api.getProducts({ category: 'Zubehör', page_size: 8 }),
+        api.getProducts({ category: 'Gaming', page_size: 8 })
+      ]);
+
+      // Trier par discount pour top deals
+      const productsWithDiscount = allProductsRes.results.filter(p => {
+        const discount = parseFloat(p.discount?.replace('%', '') || '0');
+        return discount > 0;
       });
 
-      if (page === 1) {
-        setProducts(response.results);
-      } else {
-        setProducts(prev => [...prev, ...response.results]);
-      }
+      const sortedByDiscount = productsWithDiscount.sort((a, b) => {
+        const discountA = parseFloat(a.discount?.replace('%', '') || '0');
+        const discountB = parseFloat(b.discount?.replace('%', '') || '0');
+        return discountB - discountA;
+      });
 
-      setHasMore(response.next !== null);
-      setCurrentPage(page);
+      setTopDeals(sortedByDiscount.slice(0, 8));
+      setSmartphones(smartphonesRes.results);
+      setLaptops(laptopsRes.results);
+      setTvs(tvsRes.results);
+      setAccessories(accessoriesRes.results);
+      setGaming(gamingRes.results);
     } catch (err) {
       setError('Fehler beim Laden der Produkte');
-      console.error('Error loading products:', err);
+      console.error('Error loading sections:', err);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setCurrentPage(1);
-    loadProducts(1);
+    if (searchQuery.trim()) {
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
+    }
   };
 
-  const handleLoadMore = () => {
-    loadProducts(currentPage + 1);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-40">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">
+            Seite wird geladen...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl bg-red-50 p-8 text-center dark:bg-red-950">
+        <svg
+          className="mx-auto h-12 w-12 text-red-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-100">
+          {error}
+        </h3>
+        <button
+          onClick={loadAllSections}
+          className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+        >
+          Erneut versuchen
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-16">
       {/* Search Bar */}
       <div>
         <form onSubmit={handleSearch} className="mx-auto max-w-3xl">
@@ -124,43 +173,6 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
         </form>
       </div>
 
-      {/* Category Filters */}
-      {categories.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => setSelectedCategory('')}
-            className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-              selectedCategory === ''
-                ? 'bg-blue-600 text-white shadow-md dark:bg-blue-500'
-                : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700'
-            }`}
-          >
-            Alle Kategorien
-          </button>
-          {categories.slice(0, 8).map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`rounded-full px-6 py-2 text-sm font-medium transition-colors ${
-                selectedCategory === category
-                  ? 'bg-blue-600 text-white shadow-md dark:bg-blue-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700'
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-          {categories.length > 8 && (
-            <Link
-              href="/kategorien"
-              className="rounded-full px-6 py-2 text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 dark:bg-zinc-800 dark:text-gray-300 dark:hover:bg-zinc-700 transition-colors"
-            >
-              +{categories.length - 8} mehr
-            </Link>
-          )}
-        </div>
-      )}
-
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
@@ -168,7 +180,7 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Produkte</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {products.length}
+                {topDeals.length + smartphones.length + laptops.length + tvs.length + accessories.length + gaming.length}+
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                 Verfügbar zum Vergleich
@@ -226,7 +238,7 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Händler</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {new Set(products.map(p => p.retailer).filter(Boolean)).size || 2}
+                2
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                 Saturn & MediaMarkt
@@ -251,99 +263,166 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
         </div>
       </div>
 
-      {/* Products Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-            <p className="mt-4 text-gray-600 dark:text-gray-400">
-              Produkte werden geladen...
-            </p>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="rounded-xl bg-red-50 p-8 text-center dark:bg-red-950">
-          <svg
-            className="mx-auto h-12 w-12 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-lg font-medium text-red-900 dark:text-red-100">
-            {error}
-          </h3>
-          <button
-            onClick={() => loadProducts(1)}
-            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
-          >
-            Erneut versuchen
-          </button>
-        </div>
-      ) : products.length === 0 ? (
-        <div className="rounded-xl bg-gray-50 p-12 text-center dark:bg-zinc-900">
-          <svg
-            className="mx-auto h-16 w-16 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-            />
-          </svg>
-          <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-            Keine Produkte gefunden
-          </h3>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Versuchen Sie, Ihre Suchkriterien anzupassen oder fügen Sie Produkte zur Datenbank hinzu.
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              {selectedCategory ? `${selectedCategory}` : 'Alle Produkte'}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {products.length} {products.length === 1 ? 'Produkt' : 'Produkte'}
-            </p>
+      {/* Section 1: Top Deals / Promotions */}
+      {topDeals.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                🔥 Top Angebote
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Die besten Rabatte und Deals
+              </p>
+            </div>
+            <Link
+              href="/search?sort=discount"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
+            {topDeals.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
+        </section>
+      )}
 
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="mt-12 flex justify-center">
-              <button
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
-                {loadingMore ? (
-                  <>
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></span>
-                    Laden...
-                  </>
-                ) : (
-                  'Mehr Produkte laden'
-                )}
-              </button>
+      {/* Section 2: Smartphones */}
+      {smartphones.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                📱 Smartphones
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Die neuesten Handys im Vergleich
+              </p>
             </div>
-          )}
-        </>
+            <Link
+              href="/search?category=Smartphones"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {smartphones.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Section 3: Laptops */}
+      {laptops.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                💻 Laptops & Notebooks
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Leistungsstarke Notebooks für jeden Bedarf
+              </p>
+            </div>
+            <Link
+              href="/search?category=Laptops"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {laptops.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Section 4: TVs */}
+      {tvs.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                📺 Fernseher & Smart TVs
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Große Auswahl an Fernsehern
+              </p>
+            </div>
+            <Link
+              href="/search?category=Fernseher"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {tvs.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Section 5: Gaming */}
+      {gaming.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                🎮 Gaming
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Konsolen, Spiele und Gaming-Zubehör
+              </p>
+            </div>
+            <Link
+              href="/search?category=Gaming"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {gaming.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Section 6: Accessories */}
+      {accessories.length > 0 && (
+        <section>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+                🎧 Zubehör
+              </h2>
+              <p className="mt-2 text-gray-600 dark:text-gray-400">
+                Kopfhörer, Kabel, Hüllen und mehr
+              </p>
+            </div>
+            <Link
+              href="/search?category=Zubehör"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Alle ansehen →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {accessories.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Popular Categories Section */}
@@ -352,29 +431,29 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
           Beliebte Kategorien
         </h2>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {categories.slice(0, 4).map((category) => (
-            <button
+          {categories.slice(0, 8).map((category) => (
+            <Link
               key={category}
-              onClick={() => setSelectedCategory(category)}
+              href={`/search?category=${encodeURIComponent(category)}`}
               className="group rounded-xl bg-white p-6 text-center shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:bg-zinc-900"
             >
               <div className="mb-3 text-4xl">📦</div>
               <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
                 {category}
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {products.filter(p => p.category === category).length} Produkte
+              <p className="text-sm text-blue-600 dark:text-blue-400 group-hover:underline">
+                Angebote ansehen
               </p>
-            </button>
+            </Link>
           ))}
         </div>
-        {categories.length > 4 && (
+        {categories.length > 8 && (
           <div className="mt-6 text-center">
             <Link
               href="/kategorien"
               className="inline-block rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
-              Alle Kategorien ansehen
+              Alle {categories.length} Kategorien ansehen
             </Link>
           </div>
         )}

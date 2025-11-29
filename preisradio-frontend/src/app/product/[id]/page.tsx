@@ -42,7 +42,7 @@ export default function ProductDetail() {
   // Update document metadata and JSON-LD
   useEffect(() => {
     if (product) {
-      document.title = `${product.title} | PrixRadio`;
+      document.title = `${product.title} | Preisradio`;
 
       const metaDescription = document.querySelector('meta[name="description"]');
       if (metaDescription) {

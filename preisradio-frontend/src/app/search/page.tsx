@@ -30,6 +30,9 @@ function SearchContent() {
     max: '',
   });
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'newest'>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize] = useState(20);
 
   useEffect(() => {
     loadProducts();
@@ -97,16 +100,18 @@ function SearchContent() {
     };
   }, [query, products]);
 
-  const loadProducts = async () => {
+  const loadProducts = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
+      setCurrentPage(page);
 
       const response = await api.getProductsFromBothRetailers({
         search: searchQuery || query || undefined,
         category: selectedCategory || categoryParam || undefined,
         brand: selectedBrand || brandParam || undefined,
-        page_size: 200,
+        page: page,
+        page_size: pageSize,
       });
 
       let results = response?.results || [];
@@ -138,6 +143,7 @@ function SearchContent() {
       }
 
       setProducts(results);
+      setTotalCount(response?.count || 0);
     } catch (err) {
       setError('Fehler beim Laden der Suchergebnisse');
       console.error('Error loading search results:', err);
@@ -161,6 +167,8 @@ function SearchContent() {
     setSelectedRetailer('');
     setPriceRange({ min: '', max: '' });
     setSortBy('newest');
+    setCurrentPage(1);
+    loadProducts(1);
   };
 
   // Extraire les categories uniques
@@ -424,7 +432,7 @@ function SearchContent() {
               <>
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {products.length} {products.length === 1 ? 'Ergebnis' : 'Ergebnisse'}
+                    {totalCount} {totalCount === 1 ? 'Ergebnis' : 'Ergebnisse'} insgesamt
                   </h2>
                 </div>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -432,6 +440,63 @@ function SearchContent() {
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
+
+                {/* Pagination */}
+                {totalCount > pageSize && (
+                  <div className="mt-12 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => loadProducts(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
+                    >
+                      ← Zurueck
+                    </button>
+
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: Math.ceil(totalCount / pageSize) }).map((_, index) => {
+                        const pageNum = index + 1;
+                        // Show first 3 pages, last 3 pages, and pages around current
+                        const isVisible =
+                          pageNum <= 3 ||
+                          pageNum > Math.ceil(totalCount / pageSize) - 3 ||
+                          Math.abs(pageNum - currentPage) <= 1;
+
+                        if (!isVisible) {
+                          if (index === 3) {
+                            return (
+                              <span key="dots" className="px-2 text-gray-500">
+                                ...
+                              </span>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => loadProducts(pageNum)}
+                            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => loadProducts(currentPage + 1)}
+                      disabled={currentPage * pageSize >= totalCount}
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
+                    >
+                      Weiter →
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>

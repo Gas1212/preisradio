@@ -75,10 +75,11 @@ class ApiClient {
     search?: string;
     category?: string;
     brand?: string;
+    page?: number;
     page_size?: number;
   }): Promise<ApiResponse<Product>> {
-    const pageSize = params?.page_size || 50;
-    const halfSize = Math.floor(pageSize / 2);
+    const pageSize = params?.page_size || 20;
+    const page = params?.page || 1;
 
     try {
       // Charger en parallèle depuis Saturn et MediaMarkt
@@ -86,12 +87,12 @@ class ApiClient {
         this.getProducts({
           ...params,
           retailer: 'saturn',
-          page_size: halfSize,
+          page_size: pageSize,
         }),
         this.getProducts({
           ...params,
           retailer: 'mediamarkt',
-          page_size: halfSize,
+          page_size: pageSize,
         }),
       ]);
 
@@ -110,14 +111,14 @@ class ApiClient {
 
       return {
         count: saturnResponse.count + mediamarktResponse.count,
-        next: null,
-        previous: null,
+        next: saturnResponse.next || mediamarktResponse.next ? `?page=${page + 1}` : null,
+        previous: page > 1 ? `?page=${page - 1}` : null,
         results: mixedResults,
       };
     } catch (error) {
       console.error('Error loading products from both retailers:', error);
       // Fallback : charger sans filtre retailer
-      return this.getProducts({ ...params, page_size: pageSize });
+      return this.getProducts({ ...params, page_size: pageSize, page });
     }
   }
 

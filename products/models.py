@@ -30,6 +30,9 @@ class SaturnProduct(Document):
             'category',
             'brand',
             'scraped_at',
+            ('title', 'text'),
+            ('brand', 'text'),
+            ('description', 'text'),
         ]
     }
 
@@ -62,6 +65,9 @@ class MediaMarktProduct(Document):
             'category',
             'brand',
             'scraped_at',
+            ('title', 'text'),
+            ('brand', 'text'),
+            ('description', 'text'),
         ]
     }
 

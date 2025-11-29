@@ -116,18 +116,29 @@ class ProductViewSet(viewsets.ViewSet):
             page_products = [(p, 'mediamarkt') for p in mediamarkt_results]
             total_count = mediamarkt_query.count()
         else:
-            # For 'all' retailers, combine and paginate
-            saturn_results = list(saturn_query.order_by('-scraped_at')) if saturn_query else []
-            mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at')) if mediamarkt_query else []
+            # For 'all' retailers - optimized pagination at MongoDB level
+            # Get total counts from both retailers without loading all data
+            saturn_count = saturn_query.count() if saturn_query else 0
+            mediamarkt_count = mediamarkt_query.count() if mediamarkt_query else 0
+            total_count = saturn_count + mediamarkt_count
+
+            # Strategy: Load products from BOTH retailers together, sorted by date
+            # Load enough from each to fill the page after merging
+
+            # To ensure we get enough results after merging and sorting,
+            # load 3x page_size from each retailer (accounting for interleaving)
+            load_size = max(page_size * 3, 150)
+
+            saturn_results = list(saturn_query.order_by('-scraped_at').limit(load_size)) if saturn_query else []
+            mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(load_size)) if mediamarkt_query else []
 
             # Combine products
             products = [(p, 'saturn') for p in saturn_results] + [(p, 'mediamarkt') for p in mediamarkt_results]
 
-            # Sort combined results by date
+            # Sort combined results by date (most recent first)
             products.sort(key=lambda x: x[0].scraped_at or '', reverse=True)
 
-            # Get total count and apply pagination
-            total_count = len(products)
+            # Apply pagination on the combined results
             end = start + page_size
             page_products = products[start:end]
 

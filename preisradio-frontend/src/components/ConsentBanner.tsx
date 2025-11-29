@@ -23,8 +23,8 @@ export default function ConsentBanner() {
 
   const updateConsentMode = (consentData: { analytics?: boolean; marketing?: boolean }) => {
     // Google Consent Mode
-    if (typeof window !== 'undefined' && window.gtag) {
-      window.gtag('consent', 'update', {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('consent', 'update', {
         'analytics_storage': consentData.analytics ? 'granted' : 'denied',
         'marketing_storage': consentData.marketing ? 'granted' : 'denied',
       });
@@ -54,11 +54,11 @@ export default function ConsentBanner() {
   };
 
   const toggleAnalytics = () => {
-    setConsent(prev => ({ ...prev, analytics: !prev.analytics }));
+    setConsent((prev: { analytics?: boolean; marketing?: boolean }) => ({ ...prev, analytics: !prev.analytics }));
   };
 
   const toggleMarketing = () => {
-    setConsent(prev => ({ ...prev, marketing: !prev.marketing }));
+    setConsent((prev: { analytics?: boolean; marketing?: boolean }) => ({ ...prev, marketing: !prev.marketing }));
   };
 
   if (!showConsent) return null;

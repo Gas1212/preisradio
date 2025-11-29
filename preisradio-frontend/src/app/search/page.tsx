@@ -14,13 +14,17 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
+  const categoryParam = searchParams.get('category') || '';
+  const brandParam = searchParams.get('brand') || '';
+  const retailerParam = searchParams.get('retailer') || '';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(query);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedRetailer, setSelectedRetailer] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
+  const [selectedBrand, setSelectedBrand] = useState<string>(brandParam);
+  const [selectedRetailer, setSelectedRetailer] = useState<string>(retailerParam);
   const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({
     min: '',
     max: '',
@@ -29,14 +33,14 @@ function SearchContent() {
 
   useEffect(() => {
     loadProducts();
-  }, [query, selectedCategory, selectedRetailer]);
+  }, [query, categoryParam, brandParam, retailerParam, selectedCategory, selectedBrand, selectedRetailer]);
 
   // Update document title, canonical URL and JSON-LD
   useEffect(() => {
     if (query) {
-      document.title = `Suchergebnisse für "${query}" | PrixRadio`;
+      document.title = `Suchergebnisse für "${query}" | Preisradio`;
     } else {
-      document.title = 'Suche | PrixRadio';
+      document.title = 'Suche | Preisradio';
     }
 
     // Update canonical URL
@@ -100,15 +104,16 @@ function SearchContent() {
 
       const response = await api.getProductsFromBothRetailers({
         search: searchQuery || query || undefined,
-        category: selectedCategory || undefined,
+        category: selectedCategory || categoryParam || undefined,
+        brand: selectedBrand || brandParam || undefined,
         page_size: 200,
       });
 
       let results = response?.results || [];
 
       // Filtrer par retailer si selectionne
-      if (selectedRetailer) {
-        results = results.filter(p => p.retailer === selectedRetailer);
+      if (selectedRetailer || retailerParam) {
+        results = results.filter(p => p.retailer === (selectedRetailer || retailerParam));
       }
 
       // Filtrer par plage de prix
@@ -152,6 +157,7 @@ function SearchContent() {
 
   const handleResetFilters = () => {
     setSelectedCategory('');
+    setSelectedBrand('');
     setSelectedRetailer('');
     setPriceRange({ min: '', max: '' });
     setSortBy('newest');
@@ -273,6 +279,27 @@ function SearchContent() {
                   ))}
                 </select>
               </div>
+
+              {/* Brand Filter */}
+              {brands.length > 0 && (
+                <div className="mb-6">
+                  <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Marke
+                  </label>
+                  <select
+                    value={selectedBrand}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                  >
+                    <option value="">Alle Marken</option>
+                    {brands.slice(0, 20).map((brand) => (
+                      <option key={brand} value={brand}>
+                        {brand}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Retailer Filter */}
               <div className="mb-6">

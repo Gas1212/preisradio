@@ -7,14 +7,14 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: 'PrixRadio - Preisvergleich Deutschland | Saturn & MediaMarkt',
-    template: '%s | PrixRadio'
+    default: 'Preisradio - Preisvergleich Deutschland | Saturn & MediaMarkt',
+    template: '%s | Preisradio'
   },
   description: 'Vergleichen Sie Preise von Saturn und MediaMarkt in Echtzeit. Finden Sie die besten Angebote für Elektronik, Laptops, Smartphones und mehr.',
   keywords: ['Preisvergleich', 'Saturn', 'MediaMarkt', 'Elektronik', 'Preise vergleichen', 'Deutschland', 'Online Shopping', 'Laptops', 'Smartphones'],
-  authors: [{ name: 'PrixRadio' }],
-  creator: 'PrixRadio',
-  publisher: 'PrixRadio',
+  authors: [{ name: 'Preisradio' }],
+  creator: 'Preisradio',
+  publisher: 'Preisradio',
   robots: {
     index: true,
     follow: true,
@@ -30,21 +30,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'de_DE',
     url: baseUrl,
-    siteName: 'PrixRadio',
-    title: 'PrixRadio - Preisvergleich Deutschland',
+    siteName: 'Preisradio',
+    title: 'Preisradio - Preisvergleich Deutschland',
     description: 'Vergleichen Sie Preise von Saturn und MediaMarkt in Echtzeit. Finden Sie die besten Angebote für Elektronik.',
     images: [
       {
         url: `${baseUrl}/og-image.jpg`,
         width: 1200,
         height: 630,
-        alt: 'PrixRadio Preisvergleich',
+        alt: 'Preisradio Preisvergleich',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PrixRadio - Preisvergleich Deutschland',
+    title: 'Preisradio - Preisvergleich Deutschland',
     description: 'Vergleichen Sie Preise von Saturn und MediaMarkt in Echtzeit.',
     images: [`${baseUrl}/og-image.jpg`],
   },
@@ -53,6 +53,9 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: baseUrl,
+    languages: {
+      'de-DE': `${baseUrl}/`,
+    },
   },
 };
 
@@ -72,9 +75,10 @@ export default function RootLayout({
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@type': 'WebSite',
-              name: 'PrixRadio',
+              name: 'Preisradio',
               url: baseUrl,
               description: 'Preisvergleich für Elektronikprodukte von Saturn und MediaMarkt',
+              inLanguage: 'de-DE',
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
@@ -85,7 +89,7 @@ export default function RootLayout({
               },
               publisher: {
                 '@type': 'Organization',
-                name: 'PrixRadio',
+                name: 'Preisradio',
                 url: baseUrl,
                 logo: {
                   '@type': 'ImageObject',

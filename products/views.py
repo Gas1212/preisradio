@@ -65,6 +65,55 @@ class RetailerViewSet(viewsets.ViewSet):
 class ProductViewSet(viewsets.ViewSet):
     """ViewSet for products from both retailers"""
 
+    def _calculate_search_relevance(self, product, search_term):
+        """Calculate relevance score for a product based on search term match.
+
+        Scoring:
+        - Title exact match: 100
+        - Title starts with: 80
+        - Title contains: 60
+        - Description exact match: 40
+        - Description starts with: 30
+        - Description contains: 20
+        - Brand match: 50
+        - GTIN match: 70
+        """
+        if not search_term:
+            return 0
+
+        search_lower = search_term.lower()
+        score = 0
+
+        # Check title (highest priority)
+        if product.title:
+            title_lower = product.title.lower()
+            if title_lower == search_lower:
+                score = max(score, 100)
+            elif title_lower.startswith(search_lower):
+                score = max(score, 80)
+            elif search_lower in title_lower:
+                score = max(score, 60)
+
+        # Check GTIN (exact match important for products)
+        if product.gtin and product.gtin.lower() == search_lower:
+            score = max(score, 70)
+
+        # Check brand (moderate priority)
+        if product.brand and search_lower in product.brand.lower():
+            score = max(score, 50)
+
+        # Check description (lowest priority)
+        if product.description:
+            desc_lower = product.description.lower()
+            if desc_lower == search_lower:
+                score = max(score, 40)
+            elif desc_lower.startswith(search_lower):
+                score = max(score, 30)
+            elif search_lower in desc_lower:
+                score = max(score, 20)
+
+        return score
+
     def list(self, request):
         """List products from both retailers with filtering and search"""
         search = request.query_params.get('search', '')
@@ -110,41 +159,56 @@ class ProductViewSet(viewsets.ViewSet):
         start = (page - 1) * page_size
 
         if retailer == 'saturn':
-            # Single retailer pagination
-            saturn_results = list(saturn_query.order_by('-scraped_at').skip(start).limit(page_size))
-            page_products = [(p, 'saturn') for p in saturn_results]
-            total_count = saturn_query.count()
+            # Single retailer pagination with relevance scoring
+            saturn_results = list(saturn_query.order_by('-scraped_at').limit(1000)) if saturn_query else []
+            total_count = saturn_query.count() if saturn_query else 0
+
+            # Add relevance scores and sort by score (descending), then by date
+            saturn_with_scores = [(p, 'saturn', self._calculate_search_relevance(p, search)) for p in saturn_results]
+            saturn_with_scores.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+
+            # Apply pagination after sorting
+            end = start + page_size
+            page_products = saturn_with_scores[start:end]
+            page_products = [(p, source) for p, source, _ in page_products]
+
         elif retailer == 'mediamarkt':
-            # Single retailer pagination
-            mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').skip(start).limit(page_size))
-            page_products = [(p, 'mediamarkt') for p in mediamarkt_results]
-            total_count = mediamarkt_query.count()
+            # Single retailer pagination with relevance scoring
+            mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(1000)) if mediamarkt_query else []
+            total_count = mediamarkt_query.count() if mediamarkt_query else 0
+
+            # Add relevance scores and sort by score (descending), then by date
+            mediamarkt_with_scores = [(p, 'mediamarkt', self._calculate_search_relevance(p, search)) for p in mediamarkt_results]
+            mediamarkt_with_scores.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+
+            # Apply pagination after sorting
+            end = start + page_size
+            page_products = mediamarkt_with_scores[start:end]
+            page_products = [(p, source) for p, source, _ in page_products]
+
         else:
-            # For 'all' retailers - optimized pagination at MongoDB level
-            # Get total counts from both retailers without loading all data
+            # For 'all' retailers - load from both and merge with relevance scoring
             saturn_count = saturn_query.count() if saturn_query else 0
             mediamarkt_count = mediamarkt_query.count() if mediamarkt_query else 0
             total_count = saturn_count + mediamarkt_count
 
-            # Strategy: Load products from BOTH retailers together, sorted by date
-            # Load enough from each to fill the page after merging
-
-            # To ensure we get enough results after merging and sorting,
-            # load 3x page_size from each retailer (accounting for interleaving)
-            load_size = max(page_size * 3, 150)
+            # Load enough results to ensure good page results after sorting
+            load_size = max(page_size * 5, 250)
 
             saturn_results = list(saturn_query.order_by('-scraped_at').limit(load_size)) if saturn_query else []
             mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(load_size)) if mediamarkt_query else []
 
-            # Combine products
-            products = [(p, 'saturn') for p in saturn_results] + [(p, 'mediamarkt') for p in mediamarkt_results]
+            # Combine products with relevance scores
+            products = [(p, 'saturn', self._calculate_search_relevance(p, search)) for p in saturn_results]
+            products += [(p, 'mediamarkt', self._calculate_search_relevance(p, search)) for p in mediamarkt_results]
 
-            # Sort combined results by date (most recent first)
-            products.sort(key=lambda x: x[0].scraped_at or '', reverse=True)
+            # Sort by relevance score (descending), then by date (most recent first)
+            products.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
 
-            # Apply pagination on the combined results
+            # Apply pagination on the sorted results
             end = start + page_size
             page_products = products[start:end]
+            page_products = [(p, source) for p, source, _ in page_products]
 
         # Serialize results
         results = []

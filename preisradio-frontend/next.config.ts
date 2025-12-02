@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Disabled reactCompiler due to Turbopack dependency tracking issues
-  // reactCompiler: true,
+  // Disable Turbopack to avoid dependency tracking issues on serv00
+  turbo: {
+    disabled: true,
+  },
 };
 
 export default nextConfig;

@@ -12,4 +12,5 @@ urlpatterns = [
     path('health/', health_check, name='health-check'),
     path('status/', api_status, name='api-status'),
     path('contact/', contact_message, name='contact-message'),
+    path('contact', contact_message, name='contact-message-no-slash'),
 ]

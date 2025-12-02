@@ -529,6 +529,7 @@ def contact_message(request):
     """Handle contact form submission - send emails only"""
     from django.core.mail import send_mail
     from django.conf import settings
+    import os
 
     try:
         # Get data from request
@@ -544,9 +545,14 @@ def contact_message(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        from_email = settings.DEFAULT_FROM_EMAIL
+        # Get admin email - use CONTACT_EMAIL if set, otherwise use from_email
+        admin_email = getattr(settings, 'CONTACT_EMAIL', from_email)
+        if not admin_email or admin_email == 'preisradio@preisradio.de':
+            admin_email = os.getenv('CONTACT_EMAIL', from_email)
+
         # Send email to admin
-        admin_message = f"""
-Nouveau message de contact:
+        admin_message = f"""Nouveau message de contact:
 
 Nom: {name}
 Email: {email}
@@ -558,8 +564,8 @@ Message:
         send_mail(
             subject=f"Nouveau message: {subject}",
             message=admin_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.CONTACT_EMAIL],
+            from_email=from_email,
+            recipient_list=[admin_email],
             fail_silently=False,
         )
 
@@ -572,7 +578,7 @@ Merci d'avoir nous contacté. Nous avons reçu votre message et nous vous répon
 
 Cordialement,
 L'équipe Preisradio""",
-            from_email=settings.DEFAULT_FROM_EMAIL,
+            from_email=from_email,
             recipient_list=[email],
             fail_silently=False,
         )
@@ -583,8 +589,11 @@ L'équipe Preisradio""",
         )
 
     except Exception as e:
-        print(f"Contact error: {str(e)}")
+        import traceback
+        error_msg = str(e)
+        print(f"Contact error: {error_msg}")
+        print(f"Traceback: {traceback.format_exc()}")
         return Response(
-            {'error': f'Erreur lors de l\'envoi: {str(e)}'},
+            {'error': f'Erreur lors de l\'envoi: {error_msg}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )

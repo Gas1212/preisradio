@@ -187,53 +187,6 @@ export default function MarkenPage() {
           </div>
         ) : (
           <>
-            {/* Stats Overview */}
-            <div className="mb-8 md:mb-12 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-4">
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:shadow-xl transition-shadow">
-                <div className="text-center">
-                  <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Marken
-                  </p>
-                  <p className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-400">
-                    {filteredBrands.length}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:shadow-xl transition-shadow">
-                <div className="text-center">
-                  <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Produkte
-                  </p>
-                  <p className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-purple-400">
-                    {filteredBrands.reduce((sum, b) => sum + b.productsCount, 0).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:shadow-xl transition-shadow">
-                <div className="text-center">
-                  <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Top Marke
-                  </p>
-                  <p className="text-lg md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-green-400 truncate">
-                    {filteredBrands[0]?.name || 'N/A'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:shadow-xl transition-shadow">
-                <div className="text-center">
-                  <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide mb-2">
-                    Kategorien
-                  </p>
-                  <p className="text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-600 to-pink-400">
-                    {Array.from(new Set(filteredBrands.flatMap(b => b.categories))).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Brands Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredBrands.map((brand, index) => (
@@ -256,38 +209,6 @@ export default function MarkenPage() {
                         {brand.name}
                       </span>
                     </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="mb-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm rounded-lg bg-blue-50 dark:bg-blue-950/30 px-3 py-2">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        Produkte
-                      </span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">
-                        {brand.productsCount}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-sm rounded-lg bg-purple-50 dark:bg-purple-950/30 px-3 py-2">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">
-                        Händler
-                      </span>
-                      <span className="font-bold text-purple-600 dark:text-purple-400">
-                        {brand.retailers.length}
-                      </span>
-                    </div>
-
-                    {brand.minPrice && brand.maxPrice && (
-                      <div className="flex items-center justify-between text-sm rounded-lg bg-green-50 dark:bg-green-950/30 px-3 py-2">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          Preis
-                        </span>
-                        <span className="font-bold text-green-600 dark:text-green-400">
-                          {brand.minPrice.toFixed(0)}-{brand.maxPrice.toFixed(0)}€
-                        </span>
-                      </div>
-                    )}
                   </div>
 
                   {/* Categories Pills */}

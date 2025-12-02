@@ -75,13 +75,16 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
 
       // Trier par discount pour top deals (tous les produits avec un discount)
       const productsWithDiscount = allProductsRes.results.filter(p => {
-        const discount = parseFloat(p.discount?.replace('%', '') || '0');
-        return discount > 0;
+        // Handle various discount formats: "-20%", "20%", "-20", "20", or null
+        if (!p.discount) return false;
+        const discountStr = p.discount.toString().replace(/[-%]/g, '');
+        const discount = parseFloat(discountStr);
+        return !isNaN(discount) && discount > 0;
       });
 
       const sortedByDiscount = productsWithDiscount.sort((a, b) => {
-        const discountA = parseFloat(a.discount?.replace('%', '') || '0');
-        const discountB = parseFloat(b.discount?.replace('%', '') || '0');
+        const discountA = parseFloat(a.discount?.toString().replace(/[-%]/g, '') || '0');
+        const discountB = parseFloat(b.discount?.toString().replace(/[-%]/g, '') || '0');
         return discountB - discountA;
       });
 

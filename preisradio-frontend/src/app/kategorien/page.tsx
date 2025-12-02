@@ -337,93 +337,6 @@ export default function KategorienPage() {
           </div>
         ) : (
           <>
-            {/* Stats */}
-            <div className="mb-12 grid gap-6 md:grid-cols-3">
-              <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Kategorien insgesamt
-                    </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                      {categories.length}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-blue-100 p-4 dark:bg-blue-900">
-                    <svg
-                      className="h-8 w-8 text-blue-600 dark:text-blue-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Produkte insgesamt
-                    </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                      {products.length}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-purple-100 p-4 dark:bg-purple-900">
-                    <svg
-                      className="h-8 w-8 text-purple-600 dark:text-purple-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Größte Kategorie
-                    </p>
-                    <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                      {categories.sort((a, b) => b.count - a.count)[0]?.name || 'N/A'}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">
-                    <svg
-                      className="h-8 w-8 text-green-600 dark:text-green-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Categories Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {paginatedCategories
@@ -451,13 +364,7 @@ export default function KategorienPage() {
                         {category.description}
                       </p>
 
-                      <div className="flex items-center justify-between">
-                        <div className="rounded-full bg-blue-100 px-4 py-2 dark:bg-blue-950">
-                          <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                            {category.count} {category.count === 1 ? 'Produkt' : 'Produkte'}
-                          </span>
-                        </div>
-
+                      <div className="flex items-center justify-end">
                         <svg
                           className="h-6 w-6 text-gray-400 transition-transform group-hover:translate-x-1"
                           fill="none"

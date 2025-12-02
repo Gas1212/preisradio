@@ -87,7 +87,7 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
 
       setTopDeals(sortedByDiscount.slice(0, 8));
       setSmartphones(smartphonesRes.results);
-      setLaptops(laptopsRes.results);
+      setLaptops(creatorsRes.results);
       setTvs(tvsRes.results);
       setAccessories(accessoriesRes.results);
       setGaming(gamingRes.results);

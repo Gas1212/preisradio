@@ -19,17 +19,28 @@ export default function KontaktPage() {
     e.preventDefault();
     setLoading(true);
 
-    // Simuler l'envoi du formulaire
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch('/api/contact/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-    setSubmitted(true);
-    setLoading(false);
-
-    // Réinitialiser le formulaire après 3 secondes
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 3000);
+      if (response.ok) {
+        setSubmitted(true);
+        setTimeout(() => {
+          setSubmitted(false);
+          setFormData({ name: '', email: '', subject: '', message: '' });
+        }, 3000);
+      } else {
+        alert('Fehler beim Senden der Nachricht. Bitte versuchen Sie es später erneut.');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      alert('Fehler beim Senden der Nachricht. Bitte versuchen Sie es später erneut.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleChange = (

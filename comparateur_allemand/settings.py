@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'products',
+    'contact',
 ]
 
 MIDDLEWARE = [
@@ -284,3 +285,13 @@ LOGGING = {
 # Create logs directory if it doesn't exist
 LOGS_DIR = BASE_DIR / 'logs'
 LOGS_DIR.mkdir(exist_ok=True)
+
+# Email Configuration - serv00 SMTP settings
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='mail11.serv00.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='preisradio@preisradio.de')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='preisradio@preisradio.de')
+CONTACT_EMAIL = config('CONTACT_EMAIL', default='preisradio@preisradio.de')

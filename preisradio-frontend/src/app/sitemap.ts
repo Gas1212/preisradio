@@ -1,10 +1,14 @@
 import { MetadataRoute } from 'next';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://preisradio.de';
+const API_PATH = process.env.NEXT_PUBLIC_API_BASE || '/api';
+const API_URL = `${API_BASE_URL}${API_PATH}`;
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://preisradio.de';
 
   // Pages statiques principales
-  const staticPages = [
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -49,5 +53,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  return staticPages;
+  // Charger les produits pour ajouter leurs pages au sitemap
+  try {
+    const response = await fetch(`${API_URL}/products/?page_size=1000`);
+    if (!response.ok) throw new Error('API Error');
+
+    const data = await response.json();
+    const products = data.results || [];
+
+    const productPages: MetadataRoute.Sitemap = products.map((product: any) => ({
+      url: `${baseUrl}/product/${product.id}`,
+      lastModified: product.scraped_at ? new Date(product.scraped_at) : new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.6,
+    }));
+
+    return [...staticPages, ...productPages];
+  } catch (error) {
+    console.error('Error fetching products for sitemap:', error);
+    // Fallback to static pages only if API fails
+    return staticPages;
+  }
 }

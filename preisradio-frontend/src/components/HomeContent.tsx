@@ -312,40 +312,6 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
         icon="🎧"
       />
 
-      {/* Popular Categories Section */}
-      <div>
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-900 dark:text-white">
-          Beliebte Kategorien
-        </h2>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {categories.slice(0, 8).map((category) => (
-            <Link
-              key={category}
-              href={`/search?category=${encodeURIComponent(category)}`}
-              className="group rounded-xl bg-white p-6 text-center shadow-lg transition-all hover:scale-105 hover:shadow-xl dark:bg-zinc-900"
-            >
-              <div className="mb-3 text-4xl">📦</div>
-              <h3 className="mb-1 font-semibold text-gray-900 dark:text-white">
-                {category}
-              </h3>
-              <p className="text-sm text-blue-600 dark:text-blue-400 group-hover:underline">
-                Angebote ansehen
-              </p>
-            </Link>
-          ))}
-        </div>
-        {categories.length > 8 && (
-          <div className="mt-6 text-center">
-            <Link
-              href="/kategorien"
-              className="inline-block rounded-lg bg-blue-600 px-8 py-3 font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              Alle {categories.length} Kategorien ansehen
-            </Link>
-          </div>
-        )}
-      </div>
-
       {/* Features Section */}
       <div>
         <h2 className="mb-12 text-center text-3xl font-bold text-gray-900 dark:text-white">

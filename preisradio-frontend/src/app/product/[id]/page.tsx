@@ -49,6 +49,33 @@ export default function ProductDetail() {
         metaDescription.setAttribute('content', `${product.title} - Preis: ${product.price.toFixed(2)} ${product.currency}. Vergleichen Sie Preise bei ${product.retailer === 'saturn' ? 'Saturn' : 'MediaMarkt'}.`);
       }
 
+      // Update canonical URL
+      let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (!canonicalLink) {
+        canonicalLink = document.createElement('link');
+        canonicalLink.rel = 'canonical';
+        document.head.appendChild(canonicalLink);
+      }
+      canonicalLink.href = `${baseUrl}/product/${params.id}`;
+
+      // Update hreflang tags
+      let hrefLangDE = document.querySelector('link[hreflang="de-DE"]') as HTMLLinkElement;
+      if (!hrefLangDE) {
+        hrefLangDE = document.createElement('link');
+        hrefLangDE.rel = 'alternate';
+        hrefLangDE.hrefLang = 'de-DE';
+        document.head.appendChild(hrefLangDE);
+      }
+      hrefLangDE.href = `${baseUrl}/product/${params.id}`;
+
+      let hrefLangDefault = document.querySelector('link[hreflang="x-default"]') as HTMLLinkElement;
+      if (!hrefLangDefault) {
+        hrefLangDefault = document.createElement('link');
+        hrefLangDefault.rel = 'alternate';
+        hrefLangDefault.hrefLang = 'x-default';
+        document.head.appendChild(hrefLangDefault);
+      }
+      hrefLangDefault.href = `${baseUrl}/product/${params.id}`;
 
       let script = document.querySelector('#product-jsonld') as HTMLScriptElement;
       if (!script) {

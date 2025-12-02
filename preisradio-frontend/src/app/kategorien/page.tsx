@@ -19,6 +19,9 @@ interface CategoryData {
 export default function KategorienPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   useEffect(() => {
     loadProducts();
@@ -84,7 +87,7 @@ export default function KategorienPage() {
   };
 
   // Extraire les catégories avec comptage
-  const categories = products.reduce((acc, product) => {
+  const allCategories = products.reduce((acc, product) => {
     const existing = acc.find(c => c.name === product.category);
     if (existing) {
       existing.count++;
@@ -98,6 +101,24 @@ export default function KategorienPage() {
     }
     return acc;
   }, [] as CategoryData[]);
+
+  // Filtrer par recherche
+  const filteredCategories = allCategories.filter(category =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Paginer les catégories
+  const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCategories = filteredCategories.slice(startIndex, endIndex);
+
+  // Réinitialiser à la première page lors d'une recherche
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const categories = filteredCategories;
 
   function getCategoryIcon(category: string): string {
     const icons: { [key: string]: string } = {
@@ -260,6 +281,27 @@ export default function KategorienPage() {
           <p className="mx-auto max-w-2xl text-lg text-gray-600 dark:text-gray-400">
             Durchsuchen Sie unsere Produktkategorien und finden Sie die besten Angebote
           </p>
+
+          {/* Search Bar */}
+          <div className="mx-auto mt-8 max-w-2xl">
+            <div className="relative">
+              <svg className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Kategorien durchsuchen..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-lg border border-gray-300 bg-white pl-12 pr-4 py-3 text-gray-900 placeholder-gray-500 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-gray-400"
+              />
+            </div>
+            {searchQuery && (
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                {filteredCategories.length} {filteredCategories.length === 1 ? 'Kategorie' : 'Kategorien'} gefunden
+              </p>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -384,7 +426,7 @@ export default function KategorienPage() {
 
             {/* Categories Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {categories
+              {paginatedCategories
                 .sort((a, b) => b.count - a.count)
                 .map((category) => (
                   <Link
@@ -434,6 +476,43 @@ export default function KategorienPage() {
                   </Link>
                 ))}
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
+                >
+                  ← Zurück
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`rounded-lg px-3 py-2 font-medium transition-colors ${
+                        currentPage === page
+                          ? 'bg-blue-600 text-white dark:bg-blue-500'
+                          : 'border border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800"
+                >
+                  Weiter →
+                </button>
+              </div>
+            )}
           </>
         )}
       </main>

@@ -398,70 +398,63 @@ class ProductViewSet(viewsets.ViewSet):
     def sitemap(self, request):
         """
         Get products for sitemap generation (paginated, optimized for search engines).
-        Cache for 24 hours since sitemap doesn't need real-time updates.
+        Returns minimal data (id, lastModified) to keep response small.
 
         Usage:
-        - GET /api/products/sitemap/?page=1&page_size=50000
-        Returns minimal data (id, scraped_at) to keep response small
+        - GET /api/products/sitemap/?limit=10000
+        Returns up to 10000 products (default/max)
         """
-        page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 50000))
-
-        # Limit max page size to prevent memory issues
-        page_size = min(page_size, 50000)
-
-        start = (page - 1) * page_size
+        limit = int(request.query_params.get('limit', 10000))
+        limit = min(limit, 50000)  # Max 50k per request
 
         try:
-            # Fetch minimal data from both retailers
+            # Get all products with minimal fields
             saturn_products = list(
                 SaturnProduct.objects.only('id', 'scraped_at')
                 .order_by('-scraped_at')
-                .skip(start)
-                .limit(page_size)
+                .limit(limit)
             )
 
             mediamarkt_products = list(
                 MediaMarktProduct.objects.only('id', 'scraped_at')
                 .order_by('-scraped_at')
-                .skip(start)
-                .limit(page_size)
+                .limit(limit)
             )
 
             # Combine and format for sitemap
-            products = []
+            all_products = []
 
             for p in saturn_products:
-                products.append({
+                all_products.append({
                     'id': str(p.id),
-                    'retailer': 'saturn',
-                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else None
+                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else datetime.now().isoformat()
                 })
 
             for p in mediamarkt_products:
-                products.append({
+                all_products.append({
                     'id': str(p.id),
-                    'retailer': 'mediamarkt',
-                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else None
+                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else datetime.now().isoformat()
                 })
 
-            # Get total counts for pagination info
+            # Sort by date descending
+            all_products.sort(key=lambda x: x['lastModified'], reverse=True)
+
+            # Get total counts
             total_saturn = SaturnProduct.objects.count()
             total_mediamarkt = MediaMarktProduct.objects.count()
             total_count = total_saturn + total_mediamarkt
 
-            has_next = (start + page_size) < total_count
-
             return Response({
                 'count': total_count,
-                'page': page,
-                'page_size': page_size,
-                'has_next': has_next,
-                'results': products
+                'returned': len(all_products),
+                'limit': limit,
+                'results': all_products[:limit]  # Return only up to limit
             })
 
         except Exception as e:
+            import traceback
+            print(f"Sitemap error: {traceback.format_exc()}")
             return Response(
-                {'error': str(e)},
+                {'error': str(e), 'detail': 'Failed to fetch sitemap data'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

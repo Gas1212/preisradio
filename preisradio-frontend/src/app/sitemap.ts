@@ -58,64 +58,38 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Note: Sitemap products are loaded dynamically at build time and runtime
   // If API is unreachable during build, static pages are returned as fallback
   try {
-    const allProducts = [];
-    let page = 1;
-    let hasMore = true;
-    const pageSize = 50000; // Max allowed par sitemap endpoint
-
-    // Paginer à travers tous les produits (optimisé pour sitemap)
-    while (hasMore && page <= 5) { // Sécurité: max 5 pages
-      try {
-        const response = await fetch(
-          `${API_URL}/products/sitemap/?page=${page}&page_size=${pageSize}`,
-          {
-            next: { revalidate: 86400 }, // Cache 24h
-            headers: {
-              'User-Agent': 'Preisradio-Sitemap-Generator/1.0',
-            },
-            signal: AbortSignal.timeout(30000), // 30s timeout
-          }
-        );
-
-        if (!response.ok) {
-          console.warn(`Sitemap API page ${page} returned status ${response.status}`);
-          hasMore = false;
-          break;
-        }
-
-        const data = await response.json();
-        const products = data.results || [];
-
-        if (products.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        allProducts.push(...products);
-        hasMore = data.has_next;
-        page++;
-      } catch (pageError) {
-        console.warn(`Error fetching sitemap page ${page}:`, pageError);
-        // If we got some products, use them; otherwise fallback to static
-        if (allProducts.length === 0) {
-          return staticPages;
-        }
-        hasMore = false;
+    const response = await fetch(
+      `${API_URL}/products/sitemap/?limit=50000`,
+      {
+        next: { revalidate: 86400 }, // Cache 24h
+        headers: {
+          'User-Agent': 'Preisradio-Sitemap-Generator/1.0',
+        },
+        signal: AbortSignal.timeout(60000), // 60s timeout for large response
       }
+    );
+
+    if (!response.ok) {
+      console.warn(`Sitemap API returned status ${response.status}`);
+      return staticPages;
     }
 
-    // Only add product pages if we successfully fetched some
-    if (allProducts.length > 0) {
-      const productPages: MetadataRoute.Sitemap = allProducts.map((product: any) => ({
+    const data = await response.json();
+    const products = data.results || [];
+
+    if (products.length > 0) {
+      const productPages: MetadataRoute.Sitemap = products.map((product: any) => ({
         url: `${baseUrl}/product/${product.id}`,
         lastModified: product.lastModified ? new Date(product.lastModified) : new Date(),
         changeFrequency: 'weekly' as const,
         priority: 0.6,
       }));
 
+      console.log(`Sitemap: Generated ${productPages.length} product URLs`);
       return [...staticPages, ...productPages];
     }
 
+    console.warn('Sitemap: No products returned from API');
     return staticPages;
   } catch (error) {
     console.warn('Error fetching products for sitemap, using static pages:', error);

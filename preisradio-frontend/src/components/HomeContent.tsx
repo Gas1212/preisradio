@@ -60,23 +60,23 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       const [
         allProductsRes,
         smartphonesRes,
-        laptopsRes,
+        creatorsRes,
         tvsRes,
         accessoriesRes,
         gamingRes
       ] = await Promise.all([
         api.getProducts({ page_size: 100 }),
         api.getProducts({ category: 'Smartphones', page_size: 8 }),
-        api.getProducts({ category: 'Gaming-Laptops', page_size: 8 }),
+        api.getProducts({ category: 'Creator Laptop', page_size: 8 }),
         api.getProducts({ category: '4K Fernseher', page_size: 8 }),
-        api.getProducts({ category: 'Laptop Zubehör', page_size: 8 }),
+        api.getProducts({ category: 'Aktenvernichter + Zubehör', page_size: 8 }),
         api.getProducts({ category: 'Gaming-Laptops', page_size: 8 })
       ]);
 
-      // Trier par discount pour top deals (> 50%)
+      // Trier par discount pour top deals (tous les produits avec un discount)
       const productsWithDiscount = allProductsRes.results.filter(p => {
         const discount = parseFloat(p.discount?.replace('%', '') || '0');
-        return discount > 50;
+        return discount > 0;
       });
 
       const sortedByDiscount = productsWithDiscount.sort((a, b) => {
@@ -281,35 +281,35 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       />
 
       <ProductSection
-        title="Laptops & Notebooks"
-        description="Leistungsstarke Notebooks für jeden Bedarf"
+        title="Creator Laptops"
+        description="Leistungsstarke Laptops für Kreatives"
         products={laptops}
-        viewAllLink="/search?category=Laptops"
+        viewAllLink="/search?category=Creator%20Laptop"
         icon="💻"
       />
 
       <ProductSection
-        title="Fernseher & Smart TVs"
-        description="Große Auswahl an Fernsehern"
+        title="4K Fernseher"
+        description="Große Auswahl an modernen Fernsehern"
         products={tvs}
-        viewAllLink="/search?category=Fernseher"
+        viewAllLink="/search?category=4K%20Fernseher"
         icon="📺"
       />
 
       <ProductSection
-        title="Gaming"
-        description="Konsolen, Spiele und Gaming-Zubehör"
+        title="Gaming-Laptops"
+        description="High-Performance Laptops für Gamer"
         products={gaming}
-        viewAllLink="/search?category=Gaming"
+        viewAllLink="/search?category=Gaming-Laptops"
         icon="🎮"
       />
 
       <ProductSection
-        title="Zubehör"
-        description="Kopfhörer, Kabel, Hüllen und mehr"
+        title="Aktenvernichter + Zubehör"
+        description="Bürozubehör und Vernichtungsgeräte"
         products={accessories}
-        viewAllLink="/search?category=Zubehör"
-        icon="🎧"
+        viewAllLink="/search?category=Aktenvernichter%20%2B%20Zub%C3%B6h%C3%B6r"
+        icon="🗑️"
       />
 
       {/* Features Section */}

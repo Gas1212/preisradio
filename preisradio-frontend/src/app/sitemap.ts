@@ -60,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const response = await fetch(
-      `${API_URL}/products/sitemap/?limit=50000`,
+      `${API_URL}/products/sitemap/?limit=10000`,
       {
         next: { revalidate: 86400 },
         headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
@@ -72,7 +72,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const products = data.results || [];
 
       if (products.length > 0) {
-        const productPages: MetadataRoute.Sitemap = products.map((product: any) => ({
+        // Limit to max 10000 product URLs (standard sitemap limit)
+        const limitedProducts = products.slice(0, 10000);
+
+        const productPages: MetadataRoute.Sitemap = limitedProducts.map((product: any) => ({
           url: `${baseUrl}/product/${product.id}`,
           lastModified: product.lastModified ? new Date(product.lastModified) : new Date(),
           changeFrequency: 'weekly' as const,

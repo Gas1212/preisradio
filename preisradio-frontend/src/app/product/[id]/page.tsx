@@ -63,7 +63,7 @@ export default function ProductDetail() {
       if (!hrefLangDE) {
         hrefLangDE = document.createElement('link');
         hrefLangDE.rel = 'alternate';
-        hrefLangDE.hrefLang = 'de-DE';
+        hrefLangDE.setAttribute('hreflang', 'de-DE');
         document.head.appendChild(hrefLangDE);
       }
       hrefLangDE.href = `${baseUrl}/product/${params.id}`;
@@ -72,7 +72,7 @@ export default function ProductDetail() {
       if (!hrefLangDefault) {
         hrefLangDefault = document.createElement('link');
         hrefLangDefault.rel = 'alternate';
-        hrefLangDefault.hrefLang = 'x-default';
+        hrefLangDefault.setAttribute('hreflang', 'x-default');
         document.head.appendChild(hrefLangDefault);
       }
       hrefLangDefault.href = `${baseUrl}/product/${params.id}`;

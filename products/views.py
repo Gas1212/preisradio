@@ -2,12 +2,16 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
+from django.views.decorators.cache import cache_page
+from django.views.decorators.http import condition
+from django.utils.decorators import method_decorator
 from mongoengine.queryset.visitor import Q
 from .models import SaturnProduct, MediaMarktProduct
 from .serializers import (
     SaturnProductSerializer,
     MediaMarktProductSerializer,
 )
+from datetime import datetime
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -187,13 +191,40 @@ class ProductViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def categories(self, request):
-        """Get all unique categories from both retailers"""
+        """Get all unique categories with pagination and search"""
         saturn_categories = set(SaturnProduct.objects.distinct('category'))
         mediamarkt_categories = set(MediaMarktProduct.objects.distinct('category'))
 
         all_categories = sorted(list(saturn_categories | mediamarkt_categories))
 
-        return Response({'results': all_categories})
+        # Filter by search query
+        search = request.query_params.get('search', '').lower()
+        if search:
+            all_categories = [c for c in all_categories if search in c.lower()]
+
+        # Pagination
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 50))
+
+        total_count = len(all_categories)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        paginated_categories = all_categories[start:end]
+
+        # Calculate pagination info
+        has_next = end < total_count
+        has_prev = page > 1
+
+        return Response({
+            'count': total_count,
+            'next': f'?page={page + 1}&page_size={page_size}&search={search}' if has_next else None,
+            'previous': f'?page={page - 1}&page_size={page_size}&search={search}' if has_prev else None,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_count + page_size - 1) // page_size,
+            'results': paginated_categories
+        })
 
     @action(detail=False, methods=['get'])
     def by_gtin(self, request):
@@ -362,3 +393,75 @@ class ProductViewSet(viewsets.ViewSet):
         }
 
         return Response(history_data)
+
+    @action(detail=False, methods=['get'])
+    def sitemap(self, request):
+        """
+        Get products for sitemap generation (paginated, optimized for search engines).
+        Cache for 24 hours since sitemap doesn't need real-time updates.
+
+        Usage:
+        - GET /api/products/sitemap/?page=1&page_size=50000
+        Returns minimal data (id, scraped_at) to keep response small
+        """
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 50000))
+
+        # Limit max page size to prevent memory issues
+        page_size = min(page_size, 50000)
+
+        start = (page - 1) * page_size
+
+        try:
+            # Fetch minimal data from both retailers
+            saturn_products = list(
+                SaturnProduct.objects.only('id', 'scraped_at')
+                .order_by('-scraped_at')
+                .skip(start)
+                .limit(page_size)
+            )
+
+            mediamarkt_products = list(
+                MediaMarktProduct.objects.only('id', 'scraped_at')
+                .order_by('-scraped_at')
+                .skip(start)
+                .limit(page_size)
+            )
+
+            # Combine and format for sitemap
+            products = []
+
+            for p in saturn_products:
+                products.append({
+                    'id': str(p.id),
+                    'retailer': 'saturn',
+                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else None
+                })
+
+            for p in mediamarkt_products:
+                products.append({
+                    'id': str(p.id),
+                    'retailer': 'mediamarkt',
+                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else None
+                })
+
+            # Get total counts for pagination info
+            total_saturn = SaturnProduct.objects.count()
+            total_mediamarkt = MediaMarktProduct.objects.count()
+            total_count = total_saturn + total_mediamarkt
+
+            has_next = (start + page_size) < total_count
+
+            return Response({
+                'count': total_count,
+                'page': page,
+                'page_size': page_size,
+                'has_next': has_next,
+                'results': products
+            })
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

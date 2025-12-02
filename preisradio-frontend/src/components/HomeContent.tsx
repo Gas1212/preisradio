@@ -67,16 +67,16 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       ] = await Promise.all([
         api.getProducts({ page_size: 100 }),
         api.getProducts({ category: 'Smartphones', page_size: 8 }),
-        api.getProducts({ category: 'Laptops', page_size: 8 }),
-        api.getProducts({ category: 'Fernseher', page_size: 8 }),
-        api.getProducts({ category: 'Zubehör', page_size: 8 }),
-        api.getProducts({ category: 'Gaming', page_size: 8 })
+        api.getProducts({ category: 'Gaming-Laptops', page_size: 8 }),
+        api.getProducts({ category: '4K Fernseher', page_size: 8 }),
+        api.getProducts({ category: 'Laptop Zubehör', page_size: 8 }),
+        api.getProducts({ category: 'Gaming-Laptops', page_size: 8 })
       ]);
 
-      // Trier par discount pour top deals
+      // Trier par discount pour top deals (> 50%)
       const productsWithDiscount = allProductsRes.results.filter(p => {
         const discount = parseFloat(p.discount?.replace('%', '') || '0');
-        return discount > 0;
+        return discount > 50;
       });
 
       const sortedByDiscount = productsWithDiscount.sort((a, b) => {

@@ -53,20 +53,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  // Charger les produits pour ajouter leurs pages au sitemap
+  // Charger les produits via endpoint sitemap optimisé
   try {
     const allProducts = [];
     let page = 1;
     let hasMore = true;
-    const pageSize = 500;
+    const pageSize = 50000; // Max allowed par sitemap endpoint
 
-    // Paginer à travers tous les produits
-    while (hasMore) {
-      const response = await fetch(`${API_URL}/products/?page=${page}&page_size=${pageSize}`, {
-        next: { revalidate: 86400 } // Cache 24h
-      });
+    // Paginer à travers tous les produits (optimisé pour sitemap)
+    while (hasMore && page <= 5) { // Sécurité: max 5 pages
+      const response = await fetch(
+        `${API_URL}/products/sitemap/?page=${page}&page_size=${pageSize}`,
+        { next: { revalidate: 86400 } } // Cache 24h
+      );
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) throw new Error('Sitemap API Error');
 
       const data = await response.json();
       const products = data.results || [];
@@ -77,18 +78,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
 
       allProducts.push(...products);
-
-      // Vérifier s'il y a une page suivante
-      if (!data.next) {
-        hasMore = false;
-      } else {
-        page++;
-      }
+      hasMore = data.has_next;
+      page++;
     }
 
     const productPages: MetadataRoute.Sitemap = allProducts.map((product: any) => ({
       url: `${baseUrl}/product/${product.id}`,
-      lastModified: product.scraped_at ? new Date(product.scraped_at) : new Date(),
+      lastModified: product.lastModified ? new Date(product.lastModified) : new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.6,
     }));

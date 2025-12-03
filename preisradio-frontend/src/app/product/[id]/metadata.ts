@@ -50,7 +50,7 @@ export async function generateMetadata({
       ].filter(Boolean),
       authors: [{ name: 'Preisradio' }],
       openGraph: {
-        type: 'product',
+        type: 'website',
         url: productUrl,
         title: title,
         description: description,

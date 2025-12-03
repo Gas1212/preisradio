@@ -4,7 +4,7 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
 export const metadata: Metadata = {
   title: 'Händler | Preisradio',
-  description: 'Alle Partner-Händler und Shops',
+  description: 'Alle Partner-Händler und Shops - Saturn und MediaMarkt Preisvergleich',
   alternates: {
     canonical: `${baseUrl}/haendler`,
     languages: {
@@ -15,5 +15,24 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return children;
+  const collectionsSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Partner-Händler und Shops',
+    description: 'Alle Partner-Händler und Shops im Preisradio Preisvergleich',
+    url: `${baseUrl}/haendler`,
+    inLanguage: 'de',
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(collectionsSchema),
+        }}
+      />
+      {children}
+    </>
+  );
 }

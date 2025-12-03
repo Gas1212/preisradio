@@ -1,4 +1,6 @@
 import { Metadata } from 'next';
+import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/schema';
+import { Product } from '@/lib/types';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.preisradio.de';
@@ -27,7 +29,7 @@ export async function generateMetadata({
       };
     }
 
-    const product = await response.json();
+    const product: Product = await response.json();
 
     const title = `${product.title} | Preisradio`;
     const description = `${product.title} - Preis: ${product.price?.toFixed(2) || '0.00'} ${product.currency || 'EUR'}. Vergleichen Sie Preise bei ${
@@ -35,6 +37,10 @@ export async function generateMetadata({
     }.`;
     const image = product.image || `${baseUrl}/default-product.jpg`;
     const productUrl = `${baseUrl}/product/${id}`;
+
+    // Générer les schémas JSON-LD
+    const productSchema = generateProductSchema(product, baseUrl);
+    const breadcrumbSchema = generateBreadcrumbSchema(product, baseUrl);
 
     return {
       title: title,
@@ -77,6 +83,12 @@ export async function generateMetadata({
           'de-DE': productUrl,
           'x-default': productUrl,
         },
+      },
+      other: {
+        'application/ld+json': [
+          JSON.stringify(productSchema),
+          JSON.stringify(breadcrumbSchema),
+        ],
       },
     };
   } catch (error) {

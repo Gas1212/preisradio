@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Head from 'next/head';
 import { Product } from '@/lib/types';
 import api from '@/lib/api';
 import ProductSimilar from '@/components/ProductSimilar';

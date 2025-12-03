@@ -40,12 +40,12 @@ export function generateProductSchema(
     .split('T')[0];
 
   // Construire l'offre - conforme Google Product Schema
-  const offer = {
-    '@type': 'Offer' as const,
+  const offer: any = {
+    '@type': 'Offer',
     url: product.url,
     priceCurrency: product.currency || 'EUR',
     price: product.price.toString(),
-    availability: 'https://schema.org/InStock',
+    availability: 'InStock',
     seller: seller,
     priceValidUntil: priceValidUntil,
   };

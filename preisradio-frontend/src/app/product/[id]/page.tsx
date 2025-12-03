@@ -10,6 +10,7 @@ import ProductSimilar from '@/components/ProductSimilar';
 import PriceComparison from '@/components/PriceComparison';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import ProductJsonLd from '@/components/ProductJsonLd';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
@@ -77,53 +78,30 @@ export default function ProductDetail() {
       }
       hrefLangDefault.href = `${baseUrl}/product/${params.id}`;
 
-      let script = document.querySelector('#product-jsonld') as HTMLScriptElement;
-      if (!script) {
-        script = document.createElement('script');
-        script.id = 'product-jsonld';
-        script.type = 'application/ld+json';
-        document.head.appendChild(script);
-      }
-
-      const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: product.title,
-        description: product.description || product.title,
-        image: product.image || `${baseUrl}/default-product.jpg`,
-        brand: {
-          '@type': 'Brand',
-          name: product.brand || 'Unknown'
-        },
-        sku: product.sku || product.id,
-        gtin: product.gtin,
-        offers: {
-          '@type': 'Offer',
-          url: product.url,
-          priceCurrency: product.currency,
-          price: product.price,
-          priceValidUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          availability: 'https://schema.org/InStock',
-          seller: {
-            '@type': 'Organization',
-            name: product.retailer === 'saturn' ? 'Saturn' : product.retailer === 'mediamarkt' ? 'MediaMarkt' : 'Retailer'
-          }
-        },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: '4.5',
-          reviewCount: '1'
+      // Add Open Graph meta tags for social sharing
+      const updateMetaTag = (property: string, content: string, isProperty: boolean = true) => {
+        let tag = document.querySelector(`meta[${isProperty ? 'property' : 'name'}="${property}"]`) as HTMLMetaElement;
+        if (!tag) {
+          tag = document.createElement('meta');
+          tag.setAttribute(isProperty ? 'property' : 'name', property);
+          document.head.appendChild(tag);
         }
+        tag.content = content;
       };
 
-      script.textContent = JSON.stringify(jsonLd);
+      updateMetaTag('og:title', `${product.title} | Preisradio`, true);
+      updateMetaTag('og:description', `${product.title} - Preis: ${product.price.toFixed(2)} ${product.currency}`, true);
+      updateMetaTag('og:image', product.image || `${baseUrl}/default-product.jpg`, true);
+      updateMetaTag('og:url', `${baseUrl}/product/${params.id}`, true);
+      updateMetaTag('og:type', 'product', true);
+      updateMetaTag('twitter:card', 'product', false);
+      updateMetaTag('twitter:title', `${product.title} | Preisradio`, false);
+      updateMetaTag('twitter:description', `${product.title} - Preis: ${product.price.toFixed(2)} ${product.currency}`, false);
+      updateMetaTag('twitter:image', product.image || `${baseUrl}/default-product.jpg`, false);
     }
 
     return () => {
-      const script = document.querySelector('#product-jsonld');
-      if (script) {
-        script.remove();
-      }
+      // Cleanup is handled by React when component unmounts
     };
   }, [product, params.id]);
 
@@ -198,6 +176,7 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      {product && <ProductJsonLd product={product} baseUrl={baseUrl} />}
       <Navigation />
 
       <main className="container mx-auto px-4 py-6 md:py-8">

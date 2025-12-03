@@ -119,7 +119,7 @@ export function generateBreadcrumbSchema(
         item: `${baseUrl}/product/${product.id}`,
       },
     ],
-  };
+  } as any;
 }
 
 /**
@@ -158,7 +158,7 @@ export function generateFAQSchema(baseUrl: string): FAQPage {
         },
       },
     ],
-  };
+  } as any;
 }
 
 /**
@@ -185,5 +185,5 @@ export function generateOrganizationSchema(baseUrl: string): Organization {
       contactType: 'Customer Service',
       url: `${baseUrl}/kontakt`,
     },
-  };
+  } as any;
 }

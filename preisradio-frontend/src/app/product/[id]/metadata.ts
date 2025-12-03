@@ -66,7 +66,7 @@ export async function generateMetadata({
         siteName: 'Preisradio',
       },
       twitter: {
-        card: 'product',
+        card: 'summary_large_image',
         title: title,
         description: description,
         images: [image],

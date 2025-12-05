@@ -175,6 +175,8 @@ try:
         serverSelectionTimeoutMS=30000,
         socketTimeoutMS=30000,
         maxPoolSize=100,
+        tls=True,
+        tlsAllowInvalidCertificates=True,  # Workaround for SSL issues on serv00
     )
     print("✓ Otto database connected successfully")
 except Exception as e:

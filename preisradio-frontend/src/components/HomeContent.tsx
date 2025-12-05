@@ -16,10 +16,10 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
   const urlSearchQuery = searchParams.get('search') || '';
 
   const [topDeals, setTopDeals] = useState<Product[]>([]);
-  const [smartphones, setSmartphones] = useState<Product[]>([]);
-  const [laptops, setLaptops] = useState<Product[]>([]);
-  const [tvs, setTvs] = useState<Product[]>([]);
-  const [accessories, setAccessories] = useState<Product[]>([]);
+  const [waschmaschinen, setWaschmaschinen] = useState<Product[]>([]);
+  const [kopfhorer, setKopfhorer] = useState<Product[]>([]);
+  const [fernseher, setFernseher] = useState<Product[]>([]);
+  const [handys, setHandys] = useState<Product[]>([]);
   const [gaming, setGaming] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(initialCategories);
   const [loading, setLoading] = useState(true);
@@ -59,10 +59,10 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       // Charger toutes les sections en parallèle
       const [
         allProductsRes,
-        smartphonesRes,
-        creatorsRes,
-        tvsRes,
-        accessoriesRes,
+        waschmaschinenRes,
+        kopfhorerRes,
+        fernseherRes,
+        handysRes,
         gamingRes
       ] = await Promise.all([
         api.getProducts({ page_size: 200 }), // Augmenter pour trouver plus de produits avec discount
@@ -89,10 +89,10 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       });
 
       setTopDeals(sortedByDiscount.slice(0, 20));
-      setSmartphones(smartphonesRes.results);
-      setLaptops(creatorsRes.results);
-      setTvs(tvsRes.results);
-      setAccessories(accessoriesRes.results);
+      setWaschmaschinen(waschmaschinenRes.results);
+      setKopfhorer(kopfhorerRes.results);
+      setFernseher(fernseherRes.results);
+      setHandys(handysRes.results);
       setGaming(gamingRes.results);
     } catch (err) {
       setError('Fehler beim Laden der Produkte');
@@ -183,7 +183,7 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Produkte</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {topDeals.length + smartphones.length + laptops.length + tvs.length + accessories.length + gaming.length}+
+                {topDeals.length + waschmaschinen.length + kopfhorer.length + fernseher.length + handys.length + gaming.length}+
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                 Verfügbar zum Vergleich
@@ -276,43 +276,43 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       />
 
       <ProductSection
-        title="Smartphones"
-        description="Die neuesten Handys im Vergleich"
-        products={smartphones}
-        viewAllLink="/search?category=Smartphones"
-        icon="📱"
+        title="Waschmaschinen"
+        description="Waschmaschinen und Haushaltsgeräte"
+        products={waschmaschinen}
+        viewAllLink="/search?category=Waschmaschinen"
+        icon="🧺"
       />
 
       <ProductSection
-        title="Creator Laptops"
-        description="Leistungsstarke Laptops für Kreatives"
-        products={laptops}
-        viewAllLink="/search?category=Creator%20Laptop"
-        icon="💻"
+        title="Kopfhörer"
+        description="Hochwertige Kopfhörer und Audio-Geräte"
+        products={kopfhorer}
+        viewAllLink="/search?category=Kopfh%C3%B6rer"
+        icon="🎧"
       />
 
       <ProductSection
-        title="4K Fernseher"
-        description="Große Auswahl an modernen Fernsehern"
-        products={tvs}
-        viewAllLink="/search?category=4K%20Fernseher"
+        title="Fernseher"
+        description="Moderne Fernseher und Smart TVs"
+        products={fernseher}
+        viewAllLink="/search?category=Fernseher"
         icon="📺"
       />
 
       <ProductSection
-        title="Gaming-Laptops"
-        description="High-Performance Laptops für Gamer"
-        products={gaming}
-        viewAllLink="/search?category=Gaming-Laptops"
-        icon="🎮"
+        title="Handys ohne Vertrag"
+        description="Die neuesten Smartphones im Vergleich"
+        products={handys}
+        viewAllLink="/search?category=Handys%20ohne%20Vertrag"
+        icon="📱"
       />
 
       <ProductSection
-        title="Aktenvernichter + Zubehör"
-        description="Bürozubehör und Vernichtungsgeräte"
-        products={accessories}
-        viewAllLink="/search?category=Aktenvernichter%20%2B%20Zub%C3%B6h%C3%B6r"
-        icon="🗑️"
+        title="PC-Gaming"
+        description="Gaming-PCs und Zubehör für Gamer"
+        products={gaming}
+        viewAllLink="/search?category=PC-Gaming"
+        icon="🎮"
       />
 
       {/* Features Section */}

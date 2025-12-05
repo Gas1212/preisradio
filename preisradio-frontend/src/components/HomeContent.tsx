@@ -66,11 +66,11 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
         gamingRes
       ] = await Promise.all([
         api.getProducts({ page_size: 200 }), // Augmenter pour trouver plus de produits avec discount
-        api.getProducts({ category: 'Smartphones', page_size: 20 }),
-        api.getProducts({ category: 'Creator Laptop', page_size: 20 }),
-        api.getProducts({ category: '4K Fernseher', page_size: 20 }),
-        api.getProducts({ category: 'Aktenvernichter + Zubehör', page_size: 20 }),
-        api.getProducts({ category: 'Gaming-Laptops', page_size: 20 })
+        api.getProducts({ category: 'Waschmaschinen', page_size: 20 }),
+        api.getProducts({ category: 'Kopfhörer', page_size: 20 }),
+        api.getProducts({ category: 'Fernseher', page_size: 20 }),
+        api.getProducts({ category: 'Handys ohne Vertrag', page_size: 20 }),
+        api.getProducts({ category: 'PC-Gaming', page_size: 20 })
       ]);
 
       // Trier par discount pour top deals (tous les produits avec un discount)

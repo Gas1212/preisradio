@@ -27,7 +27,7 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
       setSimilar(response.results || []);
     } catch (err) {
       console.error('Error loading similar products:', err);
-      setError('Impossible de charger les produits similaires');
+      setError('Fehler beim Laden ähnlicher Produkte');
     } finally {
       setLoading(false);
     }
@@ -41,10 +41,10 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
     <div className="mt-12 rounded-xl bg-white p-8 shadow-lg dark:bg-zinc-900">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Produits similaires
+          Ähnliche Produkte
         </h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Les clients intéressés par ce produit ont aussi regardé ces articles
+          Kunden, die dieses Produkt angesehen haben, schauten sich auch diese Artikel an
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
                   <div className="mt-4 flex items-end justify-between border-t border-gray-100 pt-4 dark:border-zinc-800">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Prix
+                        Preis
                       </p>
                       <div className="flex items-baseline gap-2">
                         <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -121,7 +121,7 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
                         </p>
                       )}
                       <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Voir →
+                        Ansehen →
                       </p>
                     </div>
                   </div>

@@ -167,8 +167,23 @@ class ApiClient {
     return this.request<Product>(`/products/${id}/`);
   }
 
-  async getSimilarProducts(id: string): Promise<ApiResponse<Product>> {
-    return this.request<ApiResponse<Product>>(`/products/${id}/similar/`);
+  async getSimilarProducts(productId: string): Promise<ApiResponse<Product>> {
+    // First get the product to know its category
+    const product = await this.getProduct(productId);
+
+    // Then get products from the same category, excluding the current product
+    const response = await this.getProductsFromBothRetailers({
+      category: product.category,
+      page_size: 12,
+    });
+
+    // Filter out the current product
+    const filteredResults = response.results.filter(p => p.id !== productId);
+
+    return {
+      ...response,
+      results: filteredResults.slice(0, 6), // Return only 6 similar products
+    };
   }
 
   async getProductByEan(ean: string): Promise<Product> {

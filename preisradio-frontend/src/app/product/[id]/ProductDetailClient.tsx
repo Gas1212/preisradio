@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/lib/types';
 import api from '@/lib/api';
 import ProductSimilar from '@/components/ProductSimilar';
@@ -132,12 +133,16 @@ export default function ProductDetailClient({ productId }: { productId: string }
           {/* Image - Reduced Size (2 columns on desktop) */}
           <div className="lg:col-span-2">
             <div className="overflow-hidden rounded-2xl bg-white p-4 md:p-6 shadow-lg dark:bg-zinc-900 sticky top-24">
-              <div className="flex h-64 md:h-80 items-center justify-center rounded-xl bg-gray-50 dark:bg-zinc-800">
+              <div className="relative h-64 md:h-80 rounded-xl bg-gray-50 dark:bg-zinc-800 overflow-hidden">
                 {product.image ? (
-                  <img
+                  <Image
                     src={product.image}
                     alt={product.title}
-                    className="h-full w-full object-contain p-4"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 40vw"
+                    className="object-contain p-4"
+                    priority
+                    unoptimized={product.image.startsWith('http')}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-gray-400">

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/lib/types';
 
 interface ProductCardProps {
@@ -29,12 +30,15 @@ export default function ProductCard({ product }: ProductCardProps) {
     <Link href={`/product/${product.id}`}>
       <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 transition-all hover:shadow-xl hover:border-blue-300 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-blue-600">
         {/* Image du produit */}
-        <div className="mb-4 flex h-48 items-center justify-center overflow-hidden rounded-lg bg-gray-50 dark:bg-zinc-800">
+        <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-50 dark:bg-zinc-800">
           {product.image ? (
-            <img
+            <Image
               src={product.image}
               alt={product.title}
-              className="h-32 sm:h-40 md:h-48 w-auto object-contain transition-transform group-hover:scale-105"
+              fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              className="object-contain p-4 transition-transform group-hover:scale-105"
+              unoptimized={product.image.startsWith('http')}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Retailer } from '@/lib/types';
 import api from '@/lib/api';
 import Navigation from '@/components/Navigation';
@@ -105,15 +106,18 @@ export default function HaendlerPage() {
                   >
                     {/* Logo/Name */}
                     <div className="mb-6">
-                      <div className="flex h-32 items-center justify-center rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-zinc-800 dark:to-zinc-900 shadow-inner">
+                      <div className="relative h-32 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-zinc-800 dark:to-zinc-900 shadow-inner overflow-hidden">
                         {retailer.logo ? (
-                          <img
+                          <Image
                             src={retailer.logo}
                             alt={retailer.name}
-                            className="max-h-full max-w-full object-contain filter group-hover:scale-110 transition-transform duration-300"
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-contain p-4 group-hover:scale-110 transition-transform duration-300"
+                            unoptimized={retailer.logo.startsWith('http')}
                           />
                         ) : (
-                          <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                          <span className="flex items-center justify-center h-full text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                             {retailer.name}
                           </span>
                         )}

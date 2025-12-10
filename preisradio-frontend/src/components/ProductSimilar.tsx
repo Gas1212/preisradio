@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
@@ -60,10 +61,13 @@ export default function ProductSimilar({ productId }: ProductSimilarProps) {
                 {/* Image */}
                 <div className="relative h-48 w-full overflow-hidden bg-gray-50 dark:bg-zinc-800">
                   {product.image ? (
-                    <img
+                    <Image
                       src={product.image}
                       alt={product.title}
-                      className="h-full w-full object-contain transition-transform group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-contain p-4 transition-transform group-hover:scale-105"
+                      unoptimized={product.image.startsWith('http')}
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-gray-400">

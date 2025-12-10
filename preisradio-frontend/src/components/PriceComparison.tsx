@@ -88,10 +88,10 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
     <div className="mb-8 rounded-xl bg-white p-8 shadow-lg dark:bg-zinc-900">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          💰 Comparaison des prix
+          💰 Preisvergleich
         </h2>
         <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Comparez les prix du même produit chez différents retailers
+          Vergleichen Sie die Preise desselben Produkts bei verschiedenen Händlern
         </p>
       </div>
 
@@ -110,10 +110,10 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
                   : 'border-gray-200 bg-gray-50 dark:border-zinc-800 dark:bg-zinc-800/50'
               }`}
             >
-              {/* Badge meilleur prix */}
+              {/* Badge bester Preis */}
               {isBestPrice && (
                 <div className="absolute -right-12 top-4 rotate-45 bg-green-500 px-12 py-1 text-center text-xs font-bold text-white">
-                  MEILLEUR PRIX
+                  BESTER PREIS
                 </div>
               )}
 
@@ -125,9 +125,9 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
                 </span>
               </div>
 
-              {/* Prix */}
+              {/* Preis */}
               <div className="mb-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Prix actuel</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Aktueller Preis</p>
                 <div className="flex items-baseline gap-3">
                   <p className={`text-4xl font-bold ${isBestPrice ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}>
                     {product.price.toFixed(2)} {product.currency}
@@ -171,7 +171,7 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                   />
                 </svg>
-                Acheter chez {retailerInfo.name}
+                Jetzt bei {retailerInfo.name} kaufen
                 <svg
                   className="h-4 w-4"
                   fill="none"
@@ -187,10 +187,10 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
                 </svg>
               </a>
 
-              {/* Informations supplémentaires */}
+              {/* Zusätzliche Informationen */}
               {product.scraped_at && (
                 <p className="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
-                  Mis à jour: {new Date(product.scraped_at).toLocaleDateString('fr-FR')}
+                  Aktualisiert: {new Date(product.scraped_at).toLocaleDateString('de-DE')}
                 </p>
               )}
             </div>
@@ -198,15 +198,15 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
         })}
       </div>
 
-      {/* Économie potentielle */}
-      {products.length === 2 && (
+      {/* Potenzielle Ersparnis */}
+      {products.length >= 2 && (
         <div className="mt-6 rounded-lg bg-blue-50 p-4 dark:bg-blue-950/20">
           <p className="text-center text-sm font-medium text-blue-900 dark:text-blue-100">
-            💡 Économisez jusqu'à{' '}
+            💡 Sparen Sie bis zu{' '}
             <span className="font-bold">
               {(Math.max(...products.map(p => p.price)) - lowestPrice).toFixed(2)} {products[0].currency}
             </span>
-            {' '}en choisissant le meilleur prix !
+            {' '}durch Auswahl des besten Preises!
           </p>
         </div>
       )}

@@ -7,18 +7,51 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
-        disallow: ['/api/', '/_next/', '/admin/'],
+        allow: [
+          '/',
+          '/_next/static/',
+          '/_next/image',
+          '/favicon.ico',
+          '/*.css$',
+          '/*.js$',
+        ],
+        disallow: [
+          '/api/',
+          '/_next/data/',
+          '/admin/',
+        ],
       },
       {
         userAgent: 'Googlebot',
-        allow: '/',
-        disallow: ['/api/', '/_next/', '/admin/'],
+        allow: [
+          '/',
+          '/_next/static/',
+          '/_next/image',
+          '/favicon.ico',
+          '/*.css$',
+          '/*.js$',
+        ],
+        disallow: [
+          '/api/',
+          '/_next/data/',
+          '/admin/',
+        ],
       },
       {
         userAgent: 'Bingbot',
-        allow: '/',
-        disallow: ['/api/', '/_next/', '/admin/'],
+        allow: [
+          '/',
+          '/_next/static/',
+          '/_next/image',
+          '/favicon.ico',
+          '/*.css$',
+          '/*.js$',
+        ],
+        disallow: [
+          '/api/',
+          '/_next/data/',
+          '/admin/',
+        ],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

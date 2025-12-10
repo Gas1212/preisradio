@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Analytics from "@/components/Analytics";
 import ConsentBanner from "@/components/ConsentBanner";
-import HrefLangTags from "@/components/HrefLangTags";
 import { generateOrganizationSchema, generateFAQSchema } from "@/lib/schema";
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -152,7 +151,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             />
           </noscript>
         )}
-        <HrefLangTags />
         <Analytics />
         <ConsentBanner />
         {children}

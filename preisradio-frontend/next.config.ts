@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: http:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://www.google-analytics.com https://www.clarity.ms https://vitals.vercel-insights.com https://api.preisradio.de",
+              "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://*.google-analytics.com https://www.clarity.ms https://a.clarity.ms https://*.clarity.ms https://vitals.vercel-insights.com https://api.preisradio.de",
               "frame-src 'self' https://www.googletagmanager.com",
               "object-src 'none'",
               "base-uri 'self'",

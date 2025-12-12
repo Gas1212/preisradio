@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
+import Script from 'next/script';
 import ProductDetailClient from './ProductDetailClient';
 import api from '@/lib/api';
+import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/schema';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
@@ -43,5 +45,43 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
-  return <ProductDetailClient productId={resolvedParams.id} />;
+
+  // Fetch product for JSON-LD (server-side)
+  let productSchema = null;
+  let breadcrumbSchema = null;
+
+  try {
+    const product = await api.getProduct(resolvedParams.id);
+    productSchema = generateProductSchema(product, baseUrl);
+    breadcrumbSchema = generateBreadcrumbSchema(product, baseUrl);
+  } catch (error) {
+    console.error('Error generating JSON-LD:', error);
+  }
+
+  return (
+    <>
+      {/* JSON-LD injected via Next.js Script with beforeInteractive strategy */}
+      {productSchema && (
+        <Script
+          id="product-jsonld"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(productSchema),
+          }}
+        />
+      )}
+      {breadcrumbSchema && (
+        <Script
+          id="breadcrumb-jsonld"
+          type="application/ld+json"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(breadcrumbSchema),
+          }}
+        />
+      )}
+      <ProductDetailClient productId={resolvedParams.id} />
+    </>
+  );
 }

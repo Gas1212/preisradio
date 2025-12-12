@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import HomeContent from '@/components/HomeContent';
+import { generateOrganizationSchema } from '@/lib/schema';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
@@ -31,8 +32,18 @@ function HomeLoadingFallback() {
 }
 
 export default function Home() {
+  const organizationSchema = generateOrganizationSchema(baseUrl);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
+      {/* Organization JSON-LD - Only on homepage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(organizationSchema),
+        }}
+      />
+
       <Navigation />
 
       <main className="container mx-auto px-4 py-8">

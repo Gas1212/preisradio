@@ -3,7 +3,7 @@ import Script from 'next/script';
 import "./globals.css";
 import Analytics from "@/components/Analytics";
 import ConsentBanner from "@/components/ConsentBanner";
-import { generateOrganizationSchema, generateFAQSchema } from "@/lib/schema";
+// Organization and FAQ schemas removed from global layout - Organization now only on homepage
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -75,8 +75,6 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
-  const organizationSchema = generateOrganizationSchema(baseUrl);
-  const faqSchema = generateFAQSchema(baseUrl);
 
   return (
     <html lang="de-DE">
@@ -131,18 +129,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 }
               }
             })
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationSchema),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqSchema),
           }}
         />
 

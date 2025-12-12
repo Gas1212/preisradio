@@ -58,13 +58,6 @@ export function generateProductSchema(
     description: product.description || product.title,
     image: product.image || `${baseUrl}/default-product.jpg`,
     offers: offer,
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: 4.2,
-      ratingCount: 128,
-      bestRating: 5,
-      worstRating: 1,
-    },
   };
 
   // Ajouter les propriétés optionnelles uniquement si elles existent

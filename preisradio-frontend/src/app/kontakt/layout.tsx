@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
 export const metadata: Metadata = {
-  title: 'Kontakt | Preisradio',
+  title: 'Kontakt',
   description: 'Kontaktieren Sie Preisradio - Ihre Fragen zum Preisvergleich beantragen wir gerne.',
   alternates: {
     canonical: `${baseUrl}/kontakt`,
@@ -11,6 +11,9 @@ export const metadata: Metadata = {
       'de-DE': `${baseUrl}/kontakt`,
       'x-default': `${baseUrl}/kontakt`,
     },
+  },
+  other: {
+    'google': 'notranslate',
   },
 };
 

@@ -12,6 +12,24 @@ export const metadata: Metadata = {
       'x-default': `${baseUrl}/kategorien`,
     },
   },
+  openGraph: {
+    title: 'Alle Kategorien | Preisradio',
+    description: 'Durchsuchen Sie unsere Produktkategorien und finden Sie die besten Angebote im Preisvergleich',
+    url: `${baseUrl}/kategorien`,
+    type: 'website',
+    images: [{
+      url: `${baseUrl}/favicon.ico`,
+      width: 512,
+      height: 512,
+      alt: 'Preisradio Kategorien',
+    }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Alle Kategorien | Preisradio',
+    description: 'Durchsuchen Sie unsere Produktkategorien und finden Sie die besten Angebote',
+    images: [`${baseUrl}/favicon.ico`],
+  },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

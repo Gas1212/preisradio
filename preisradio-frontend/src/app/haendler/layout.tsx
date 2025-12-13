@@ -12,6 +12,24 @@ export const metadata: Metadata = {
       'x-default': `${baseUrl}/haendler`,
     },
   },
+  openGraph: {
+    title: 'Partner-Händler | Preisradio',
+    description: 'Alle Partner-Händler und Shops - Saturn und MediaMarkt Preisvergleich',
+    url: `${baseUrl}/haendler`,
+    type: 'website',
+    images: [{
+      url: `${baseUrl}/favicon.ico`,
+      width: 512,
+      height: 512,
+      alt: 'Preisradio Händler',
+    }],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Partner-Händler | Preisradio',
+    description: 'Alle Partner-Händler und Shops bei Preisradio',
+    images: [`${baseUrl}/favicon.ico`],
+  },
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -100,7 +100,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </>
         )}
 
-        {/* JSON-LD Structured Data */}
+        {/* JSON-LD Structured Data - WebSite schema only */}
+        {/* Organization schema is on homepage for better SEO */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -118,15 +119,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                   urlTemplate: `${baseUrl}/search?q={search_term_string}`
                 },
                 'query-input': 'required name=search_term_string'
-              },
-              publisher: {
-                '@type': 'Organization',
-                name: 'Preisradio',
-                url: baseUrl,
-                logo: {
-                  '@type': 'ImageObject',
-                  url: `${baseUrl}/favicon.ico`
-                }
               }
             })
           }}

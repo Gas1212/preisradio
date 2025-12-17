@@ -54,9 +54,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // Fetch products for sitemap
+    // Fetch products for sitemap (use full products endpoint to get brand and category)
     const productsResponse = await fetch(
-      `${API_URL}/products/sitemap/?limit=30000`,
+      `${API_URL}/products/?page_size=50000`,
       {
         next: { revalidate: 86400 },
         headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
@@ -72,13 +72,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const products = data.results || [];
 
       if (products.length > 0) {
-        // Limit to max 30000 product URLs
-        const limitedProducts = products.slice(0, 30000);
+        // Limit to max 50000 product URLs (Google sitemap limit)
+        const limitedProducts = products.slice(0, 50000);
 
         // Generate product pages
         productPages = limitedProducts.map((product: any) => ({
           url: `${baseUrl}/product/${product.id}`,
-          lastModified: product.lastModified ? new Date(product.lastModified) : new Date(),
+          lastModified: product.scraped_at ? new Date(product.scraped_at) : new Date(),
           changeFrequency: 'weekly' as const,
           priority: 0.6,
         }));
@@ -92,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
               uniqueBrands.set(slug, {
                 slug,
                 name: product.brand,
-                lastModified: product.lastModified || new Date(),
+                lastModified: product.scraped_at || new Date(),
               });
             }
           }
@@ -114,7 +114,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
               uniqueCategories.set(slug, {
                 slug,
                 name: product.category,
-                lastModified: product.lastModified || new Date(),
+                lastModified: product.scraped_at || new Date(),
               });
             }
           }
@@ -129,7 +129,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
     }
 
-    return [...staticPages, ...brandPages, ...categoryPages, ...productPages];
+    // Combine all URLs and respect 50000 URL limit
+    const allUrls = [...staticPages, ...brandPages, ...categoryPages, ...productPages];
+
+    // Google sitemap limit is 50000 URLs
+    if (allUrls.length > 50000) {
+      console.warn(`Sitemap has ${allUrls.length} URLs, limiting to 50000`);
+      return allUrls.slice(0, 50000);
+    }
+
+    return allUrls;
   } catch (error) {
     console.warn('Error fetching products for sitemap:', error);
   }

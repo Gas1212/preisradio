@@ -192,7 +192,7 @@ export default function MarkenPage() {
               {filteredBrands.map((brand, index) => (
                 <Link
                   key={brand.slug}
-                  href={`/search?brand=${encodeURIComponent(brand.name)}`}
+                  href={`/marken/${encodeURIComponent(brand.slug)}`}
                   className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-2xl dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800"
                 >
                   {/* Top 3 Badge */}

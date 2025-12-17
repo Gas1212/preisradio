@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
         disallow: [
           '/api/',
           '/admin/',
+          '/search*',  // Block all search URLs with query parameters
+          '/*?*',      // Block all URLs with query parameters (search, filters, etc.)
           '/_next/static/*/pages/_app*.js',
           '/_next/static/*/pages/_error*.js',
           '/*.json$',

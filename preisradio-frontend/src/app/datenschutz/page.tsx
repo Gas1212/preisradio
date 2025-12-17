@@ -123,7 +123,6 @@ export default function DatenschutzPage() {
               </div>
             </section>
           </div>
-          </div>
         </div>
       </main>
 

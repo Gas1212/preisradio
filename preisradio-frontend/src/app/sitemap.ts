@@ -17,12 +17,13 @@ export async function generateSitemaps() {
 export default async function sitemap({
   id,
 }: {
-  id: string;
+  id: Promise<string>;
 }): Promise<MetadataRoute.Sitemap> {
+  const sitemapId = await id;
   const baseUrl = 'https://preisradio.de';
 
   // Static pages sitemap
-  if (id === 'static') {
+  if (sitemapId === 'static') {
     return [
       {
         url: baseUrl,
@@ -103,7 +104,7 @@ export default async function sitemap({
     }
 
     // Products sitemap
-    if (id === 'products') {
+    if (sitemapId === 'products') {
       const productPages = allProducts.map((product: any) => ({
         url: `${baseUrl}/product/${product.id}`,
         lastModified: product.scraped_at ? new Date(product.scraped_at) : new Date(),
@@ -116,7 +117,7 @@ export default async function sitemap({
     }
 
     // Brands sitemap
-    if (id === 'brands') {
+    if (sitemapId === 'brands') {
       const uniqueBrands = new Map<string, any>();
       allProducts.forEach((product: any) => {
         if (product.brand) {
@@ -143,7 +144,7 @@ export default async function sitemap({
     }
 
     // Categories sitemap
-    if (id === 'categories') {
+    if (sitemapId === 'categories') {
       const uniqueCategories = new Map<string, any>();
       allProducts.forEach((product: any) => {
         if (product.category) {
@@ -169,7 +170,7 @@ export default async function sitemap({
       return categoryPages;
     }
   } catch (error) {
-    console.error(`Error generating sitemap for ${id}:`, error);
+    console.error(`Error generating sitemap for ${sitemapId}:`, error);
   }
 
   return [];

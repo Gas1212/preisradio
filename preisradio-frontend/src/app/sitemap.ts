@@ -8,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 export async function generateSitemaps() {
   return [
     { id: 'static' },
-    { id: 'products' },
+    { id: 'list-products-1' },
     { id: 'brands' },
     { id: 'categories' },
   ];
@@ -104,7 +104,7 @@ export default async function sitemap({
     }
 
     // Products sitemap
-    if (sitemapId === 'products') {
+    if (sitemapId === 'list-products-1') {
       const productPages = allProducts.map((product: any) => ({
         url: `${baseUrl}/product/${product.id}`,
         lastModified: product.scraped_at ? new Date(product.scraped_at) : new Date(),

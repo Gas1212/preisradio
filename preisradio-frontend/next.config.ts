@@ -16,6 +16,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: '/sitemap/:path*.xml',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 's-maxage=86400, stale-while-revalidate=43200'
+          }
+        ],
+      },
+      {
         source: '/:path*',
         headers: [
           {

@@ -18,15 +18,15 @@ export async function generateSitemaps() {
 async function fetchAllProducts() {
   const [saturnResponse, mediamarktResponse, ottoResponse] = await Promise.all([
     fetch(`${API_URL}/products/?page_size=10000&retailer=saturn`, {
-      next: { revalidate: 86400 }, // Cache for 24 hours
+      next: { revalidate: 0 }, // No cache - force fresh data
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
     }),
     fetch(`${API_URL}/products/?page_size=10000&retailer=mediamarkt`, {
-      next: { revalidate: 86400 }, // Cache for 24 hours
+      next: { revalidate: 0 }, // No cache - force fresh data
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
     }),
     fetch(`${API_URL}/products/?page_size=10000&retailer=otto`, {
-      next: { revalidate: 86400 }, // Cache for 24 hours
+      next: { revalidate: 0 }, // No cache - force fresh data
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
     }),
   ]);

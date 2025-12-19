@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/sitemap/:path*.xml',
+        source: '/sitemap/:slug.xml',
         headers: [
           {
             key: 'Cache-Control',

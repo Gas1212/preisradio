@@ -55,7 +55,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const { id: rawId } = await params;
+  // Remove .xml extension if present
+  const id = rawId.replace(/\.xml$/, '');
   const baseUrl = 'https://preisradio.de';
 
   let urls: { url: string; lastModified: Date; changeFrequency: string; priority: number }[] = [];

@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>https://preisradio.de/api/sitemap/static</loc>
+    <loc>https://preisradio.de/api/sitemap/static.xml</loc>
   </sitemap>
   <sitemap>
-    <loc>https://preisradio.de/api/sitemap/list-products</loc>
+    <loc>https://preisradio.de/api/sitemap/list-products.xml</loc>
   </sitemap>
   <sitemap>
-    <loc>https://preisradio.de/api/sitemap/brands</loc>
+    <loc>https://preisradio.de/api/sitemap/brands.xml</loc>
   </sitemap>
   <sitemap>
-    <loc>https://preisradio.de/api/sitemap/categories</loc>
+    <loc>https://preisradio.de/api/sitemap/categories.xml</loc>
   </sitemap>
 </sitemapindex>

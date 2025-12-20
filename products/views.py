@@ -657,16 +657,16 @@ class ProductViewSet(viewsets.ViewSet):
 
                 # Required fields
                 SubElement(item, 'g:id').text = str(product.id)
-                SubElement(item, 'title').text = product.name[:150] if product.name else 'Produkt'
-                SubElement(item, 'description').text = (product.description[:5000] if hasattr(product, 'description') and product.description else product.name[:5000]) if product.name else 'Keine Beschreibung'
+                SubElement(item, 'title').text = product.title[:150] if product.title else 'Produkt'
+                SubElement(item, 'description').text = (product.description[:5000] if product.description else product.title[:5000]) if product.title else 'Keine Beschreibung'
                 SubElement(item, 'link').text = f'https://preisradio.de/product/{product.id}'
 
                 # Image
-                if hasattr(product, 'image_url') and product.image_url:
-                    SubElement(item, 'g:image_link').text = product.image_url
+                if product.image:
+                    SubElement(item, 'g:image_link').text = product.image
 
                 # Price - format as "99.99 EUR"
-                if hasattr(product, 'price') and product.price:
+                if product.price:
                     SubElement(item, 'g:price').text = f'{product.price:.2f} EUR'
 
                 # Availability
@@ -676,23 +676,23 @@ class ProductViewSet(viewsets.ViewSet):
                 SubElement(item, 'g:condition').text = 'new'
 
                 # Brand
-                if hasattr(product, 'brand') and product.brand:
+                if product.brand:
                     SubElement(item, 'g:brand').text = product.brand[:70]
 
                 # GTIN (if available)
-                if hasattr(product, 'ean') and product.ean:
-                    SubElement(item, 'g:gtin').text = str(product.ean)
+                if product.gtin:
+                    SubElement(item, 'g:gtin').text = str(product.gtin)
 
                 # Additional fields
-                if hasattr(product, 'category') and product.category:
+                if product.category:
                     SubElement(item, 'g:product_type').text = product.category
 
                 # Retailer-specific identifier
                 SubElement(item, 'g:retailer').text = retailer
 
                 # Product URL at retailer
-                if hasattr(product, 'product_url') and product.product_url:
-                    SubElement(item, 'g:product_url').text = product.product_url
+                if product.url:
+                    SubElement(item, 'g:product_url').text = product.url
 
             # Add all products to feed
             for product in saturn_products:

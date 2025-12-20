@@ -687,12 +687,12 @@ class ProductViewSet(viewsets.ViewSet):
                 if product.category:
                     SubElement(item, 'g:product_type').text = product.category
 
-                # Retailer-specific identifier
-                SubElement(item, 'g:retailer').text = retailer
+                # Custom attribute for retailer name
+                SubElement(item, 'g:custom_label_0').text = retailer
 
-                # Product URL at retailer
+                # Original retailer URL (optional, for reference)
                 if product.url:
-                    SubElement(item, 'g:product_url').text = product.url
+                    SubElement(item, 'g:custom_label_1').text = product.url[:100]
 
             # Add all products to feed
             for product in saturn_products:

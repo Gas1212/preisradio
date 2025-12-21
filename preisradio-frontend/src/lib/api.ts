@@ -1,6 +1,6 @@
 // Client API pour communiquer avec le backend Django
 
-import { Product, Retailer, ApiResponse, HealthResponse, StatusResponse } from './types';
+import { Product, Retailer, ApiResponse, HealthResponse, StatusResponse, CategoriesResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://preisradio.de';
 const API_PATH = process.env.NEXT_PUBLIC_API_BASE || '/api';
@@ -159,8 +159,21 @@ class ApiClient {
     }
   }
 
-  async getCategories(): Promise<{ results: string[] }> {
-    return this.request<{ results: string[] }>('/products/categories/');
+  async getCategories(params?: {
+    search?: string;
+    page?: number;
+    page_size?: number;
+  }): Promise<CategoriesResponse> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.page_size) queryParams.append('page_size', params.page_size.toString());
+
+    const query = queryParams.toString();
+    const endpoint = query ? `/products/categories/?${query}` : '/products/categories/';
+
+    return this.request<CategoriesResponse>(endpoint);
   }
 
   async getProduct(id: string): Promise<Product> {

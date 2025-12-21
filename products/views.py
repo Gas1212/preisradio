@@ -334,27 +334,60 @@ class ProductViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def categories(self, request):
-        """Get all unique categories with pagination and search"""
-        saturn_categories = set(SaturnProduct.objects.distinct('category'))
-        mediamarkt_categories = set(MediaMarktProduct.objects.distinct('category'))
-        otto_categories = set(OttoProduct.objects.distinct('category'))
+        """
+        Get all unique categories with product count, pagination and search.
 
-        all_categories = sorted(list(saturn_categories | mediamarkt_categories | otto_categories))
+        Query parameters:
+        - search: Filter categories by name
+        - page: Page number (default: 1)
+        - page_size: Items per page (default: 50, max: 200)
+
+        Returns categories with product counts for better UX.
+        """
+        # Get all unique categories from each retailer
+        saturn_categories = list(SaturnProduct.objects.distinct('category'))
+        mediamarkt_categories = list(MediaMarktProduct.objects.distinct('category'))
+        otto_categories = list(OttoProduct.objects.distinct('category'))
+
+        # Combine all categories
+        all_categories_set = set(saturn_categories + mediamarkt_categories + otto_categories)
+
+        # Count products per category
+        categories_with_count = []
+        for category in all_categories_set:
+            saturn_count = SaturnProduct.objects.filter(category=category).count()
+            mediamarkt_count = MediaMarktProduct.objects.filter(category=category).count()
+            otto_count = OttoProduct.objects.filter(category=category).count()
+            total_count = saturn_count + mediamarkt_count + otto_count
+
+            categories_with_count.append({
+                'name': category,
+                'count': total_count,
+                'saturn_count': saturn_count,
+                'mediamarkt_count': mediamarkt_count,
+                'otto_count': otto_count
+            })
+
+        # Sort by product count (most popular first)
+        categories_with_count.sort(key=lambda x: x['count'], reverse=True)
 
         # Filter by search query
         search = request.query_params.get('search', '').lower()
         if search:
-            all_categories = [c for c in all_categories if search in c.lower()]
+            categories_with_count = [
+                c for c in categories_with_count
+                if search in c['name'].lower()
+            ]
 
         # Pagination
         page = int(request.query_params.get('page', 1))
-        page_size = int(request.query_params.get('page_size', 50))
+        page_size = min(int(request.query_params.get('page_size', 50)), 200)
 
-        total_count = len(all_categories)
+        total_count = len(categories_with_count)
         start = (page - 1) * page_size
         end = start + page_size
 
-        paginated_categories = all_categories[start:end]
+        paginated_categories = categories_with_count[start:end]
 
         # Calculate pagination info
         has_next = end < total_count

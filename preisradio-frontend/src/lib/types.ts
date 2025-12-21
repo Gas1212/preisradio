@@ -72,3 +72,21 @@ export interface Brand {
   minPrice?: number;
   maxPrice?: number;
 }
+
+export interface Category {
+  name: string;
+  count: number;
+  saturn_count?: number;
+  mediamarkt_count?: number;
+  otto_count?: number;
+}
+
+export interface CategoriesResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  results: Category[];
+}

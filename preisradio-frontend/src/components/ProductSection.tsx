@@ -97,7 +97,7 @@ export default function ProductSection({
             {products.map((product) => (
               <div
                 key={product.id}
-                className="flex-none w-[280px] sm:w-[320px] md:w-[340px] lg:w-[360px] snap-start"
+                className="flex-none w-[260px] sm:w-[280px] md:w-[240px] lg:w-[260px] snap-start"
               >
                 <ProductCard product={product} />
               </div>

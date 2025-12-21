@@ -55,8 +55,8 @@ export default function HomeContent() {
       // Load top categories first
       const categories = await loadTopCategories();
 
-      // Load all products for top deals
-      const allProductsRes = await api.getProducts({ page_size: 200 });
+      // Load all products from all retailers for top deals
+      const allProductsRes = await api.getProductsFromBothRetailers({ page_size: 200 });
 
       // Filter products with discounts for top deals
       const productsWithDiscount = allProductsRes.results.filter(p => {

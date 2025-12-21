@@ -46,6 +46,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
   // Fetch category products server-side
   let products: Product[] = [];
   let categoryName = '';
+  let totalProductsCount = 0;
 
   try {
     const decodedSlug = decodeURIComponent(slug);
@@ -63,6 +64,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
 
     if (matchingCategory) {
       categoryName = matchingCategory.name;
+      totalProductsCount = matchingCategory.count;
 
       // Fetch products using the exact category name
       const response = await api.getProductsFromBothRetailers({
@@ -87,6 +89,7 @@ export default async function CategoryDetailPage({ params }: { params: Promise<{
       slug={slug}
       initialProducts={products}
       initialCategoryName={categoryName}
+      totalProductsCount={totalProductsCount}
     />
   );
 }

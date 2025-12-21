@@ -14,15 +14,18 @@ interface CategoryDetailClientProps {
   slug: string;
   initialProducts: Product[];
   initialCategoryName: string;
+  totalProductsCount?: number;
 }
 
 export default function CategoryDetailClient({
   slug,
   initialProducts,
-  initialCategoryName
+  initialCategoryName,
+  totalProductsCount = 0
 }: CategoryDetailClientProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [categoryName, setCategoryName] = useState<string>(initialCategoryName);
+  const [totalCount, setTotalCount] = useState<number>(totalProductsCount);
   const [loading, setLoading] = useState(false);
   const [selectedRetailer, setSelectedRetailer] = useState<string>('');
   const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({
@@ -160,7 +163,7 @@ export default function CategoryDetailClient({
             {categoryName}
           </h1>
           <p className="text-base md:text-lg text-gray-600 dark:text-gray-400">
-            {filteredProducts.length} {filteredProducts.length === 1 ? 'Produkt' : 'Produkte'} gefunden
+            {filteredProducts.length} von {totalCount} {totalCount === 1 ? 'Produkt' : 'Produkten'} angezeigt
           </p>
         </div>
 

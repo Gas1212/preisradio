@@ -29,21 +29,21 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/product/${product.id}`}>
       <div className="group relative overflow-hidden rounded-xl border border-gray-200 bg-white p-6 transition-all hover:shadow-xl hover:border-blue-300 dark:bg-zinc-900 dark:border-zinc-800 dark:hover:border-blue-600">
-        {/* Image du produit */}
-        <div className="relative mb-4 h-48 overflow-hidden rounded-lg bg-gray-50 dark:bg-zinc-800">
+        {/* Image du produit - Taille fixe pour uniformité */}
+        <div className="relative mb-4 aspect-square w-full overflow-hidden rounded-lg bg-gray-50 dark:bg-zinc-800">
           {product.image ? (
             <Image
               src={product.image}
               alt={product.title}
               fill
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="object-contain p-4 transition-transform group-hover:scale-105"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
               unoptimized={product.image.startsWith('http')}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">
               <svg
-                className="h-20 w-20"
+                className="h-16 w-16 sm:h-20 sm:w-20"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

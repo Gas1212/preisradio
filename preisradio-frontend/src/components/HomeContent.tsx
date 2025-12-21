@@ -2,26 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Product } from '@/lib/types';
+import { Product, Category } from '@/lib/types';
 import api from '@/lib/api';
 import ProductSection from '@/components/ProductSection';
 import Link from 'next/link';
 
-interface HomeContentProps {
-  initialCategories?: string[];
+interface CategorySection {
+  category: Category;
+  saturnProducts: Product[];
+  mediamarktProducts: Product[];
+  ottoProducts: Product[];
 }
 
-export default function HomeContent({ initialCategories = [] }: HomeContentProps) {
+export default function HomeContent() {
   const searchParams = useSearchParams();
   const urlSearchQuery = searchParams.get('search') || '';
 
   const [topDeals, setTopDeals] = useState<Product[]>([]);
-  const [waschmaschinen, setWaschmaschinen] = useState<Product[]>([]);
-  const [kopfhorer, setKopfhorer] = useState<Product[]>([]);
-  const [fernseher, setFernseher] = useState<Product[]>([]);
-  const [handys, setHandys] = useState<Product[]>([]);
-  const [gaming, setGaming] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [categorySections, setCategorySections] = useState<CategorySection[]>([]);
+  const [topCategories, setTopCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(urlSearchQuery);
@@ -31,24 +30,20 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
   }, []);
 
   useEffect(() => {
-    if (initialCategories.length === 0) {
-      loadCategories();
-    }
-  }, []);
-
-  useEffect(() => {
     if (urlSearchQuery && urlSearchQuery !== searchQuery) {
       setSearchQuery(urlSearchQuery);
     }
   }, [urlSearchQuery]);
 
-  const loadCategories = async () => {
+  const loadTopCategories = async () => {
     try {
-      const response = await api.getCategories();
-      // Extract just the category names from the Category objects
-      setCategories(response.results?.map(cat => cat.name) || []);
+      // Load top 5 categories by product count
+      const response = await api.getCategories({ page_size: 5 });
+      setTopCategories(response.results || []);
+      return response.results || [];
     } catch (err) {
       console.error('Error loading categories:', err);
+      return [];
     }
   };
 
@@ -57,26 +52,14 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
     setError(null);
 
     try {
-      // Charger toutes les sections en parallèle
-      const [
-        allProductsRes,
-        waschmaschinenRes,
-        kopfhorerRes,
-        fernseherRes,
-        handysRes,
-        gamingRes
-      ] = await Promise.all([
-        api.getProducts({ page_size: 200 }), // Augmenter pour trouver plus de produits avec discount
-        api.getProducts({ category: 'Waschmaschinen', page_size: 20 }),
-        api.getProducts({ category: 'Kopfhörer', page_size: 20 }),
-        api.getProducts({ category: 'Fernseher', page_size: 20 }),
-        api.getProducts({ category: 'Handys ohne Vertrag', page_size: 20 }),
-        api.getProducts({ category: 'PC-Gaming', page_size: 20 })
-      ]);
+      // Load top categories first
+      const categories = await loadTopCategories();
 
-      // Trier par discount pour top deals (tous les produits avec un discount)
+      // Load all products for top deals
+      const allProductsRes = await api.getProducts({ page_size: 200 });
+
+      // Filter products with discounts for top deals
       const productsWithDiscount = allProductsRes.results.filter(p => {
-        // Handle various discount formats: "-20%", "20%", "-20", "20", or null
         if (!p.discount) return false;
         const discountStr = p.discount.toString().replace(/[-%]/g, '');
         const discount = parseFloat(discountStr);
@@ -90,11 +73,26 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       });
 
       setTopDeals(sortedByDiscount.slice(0, 20));
-      setWaschmaschinen(waschmaschinenRes.results);
-      setKopfhorer(kopfhorerRes.results);
-      setFernseher(fernseherRes.results);
-      setHandys(handysRes.results);
-      setGaming(gamingRes.results);
+
+      // Load products for each top category from all retailers mixed
+      const sections: CategorySection[] = [];
+
+      for (const category of categories) {
+        // Load products from all retailers for this category
+        const response = await api.getProductsFromBothRetailers({
+          category: category.name,
+          page_size: 20
+        });
+
+        sections.push({
+          category,
+          saturnProducts: response.results.filter(p => p.retailer === 'saturn'),
+          mediamarktProducts: response.results.filter(p => p.retailer === 'mediamarkt'),
+          ottoProducts: response.results.filter(p => p.retailer === 'otto')
+        });
+      }
+
+      setCategorySections(sections);
     } catch (err) {
       setError('Fehler beim Laden der Produkte');
       console.error('Error loading sections:', err);
@@ -108,6 +106,33 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
     if (searchQuery.trim()) {
       window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     }
+  };
+
+  const getCategoryIcon = (categoryName: string): string => {
+    const icons: { [key: string]: string } = {
+      'Laptops': '💻',
+      'Gaming': '🎮',
+      'Handys': '📱',
+      'Kopfhörer': '🎧',
+      'Fernseher': '📺',
+      'Tablets': '📱',
+      'Smartwatches': '⌚',
+      'Kameras': '📷',
+      'Waschmaschinen': '🧺',
+      'Kühlschränke': '❄️',
+      'PC': '🖥️',
+      'Smartphone': '📱',
+      'Audio': '🔊',
+      'TV': '📺',
+    };
+
+    for (const [key, icon] of Object.entries(icons)) {
+      if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+        return icon;
+      }
+    }
+
+    return '📦';
   };
 
   if (loading) {
@@ -184,7 +209,7 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Produkte</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {topDeals.length + waschmaschinen.length + kopfhorer.length + fernseher.length + handys.length + gaming.length}+
+                {topCategories.reduce((sum, cat) => sum + cat.count, 0)}+
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                 Verfügbar zum Vergleich
@@ -213,10 +238,10 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Kategorien</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {categories.length}
+                {topCategories.length}+
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                Verschiedene Bereiche
+                Top Kategorien
               </p>
             </div>
             <div className="rounded-full bg-purple-100 p-4 dark:bg-purple-900">
@@ -270,51 +295,35 @@ export default function HomeContent({ initialCategories = [] }: HomeContentProps
       {/* Product Sections with Horizontal Scroll on Mobile */}
       <ProductSection
         title="Top Angebote"
-        description="Die besten Rabatte und Deals"
+        description="Die besten Rabatte und Deals von allen Händlern"
         products={topDeals}
         viewAllLink="/search?sort=discount"
         icon="🔥"
       />
 
-      <ProductSection
-        title="Waschmaschinen"
-        description="Waschmaschinen und Haushaltsgeräte"
-        products={waschmaschinen}
-        viewAllLink="/search?category=Waschmaschinen"
-        icon="🧺"
-      />
+      {/* Dynamic Category Sections */}
+      {categorySections.map((section) => {
+        // Mix products from all retailers
+        const allProducts = [
+          ...section.saturnProducts,
+          ...section.mediamarktProducts,
+          ...section.ottoProducts
+        ];
 
-      <ProductSection
-        title="Kopfhörer"
-        description="Hochwertige Kopfhörer und Audio-Geräte"
-        products={kopfhorer}
-        viewAllLink="/search?category=Kopfh%C3%B6rer"
-        icon="🎧"
-      />
+        const categorySlug = section.category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const icon = getCategoryIcon(section.category.name);
 
-      <ProductSection
-        title="Fernseher"
-        description="Moderne Fernseher und Smart TVs"
-        products={fernseher}
-        viewAllLink="/search?category=Fernseher"
-        icon="📺"
-      />
-
-      <ProductSection
-        title="Handys ohne Vertrag"
-        description="Die neuesten Smartphones im Vergleich"
-        products={handys}
-        viewAllLink="/search?category=Handys%20ohne%20Vertrag"
-        icon="📱"
-      />
-
-      <ProductSection
-        title="PC-Gaming"
-        description="Gaming-PCs und Zubehör für Gamer"
-        products={gaming}
-        viewAllLink="/search?category=PC-Gaming"
-        icon="🎮"
-      />
+        return (
+          <ProductSection
+            key={section.category.name}
+            title={section.category.name}
+            description={`${section.category.count} Produkte von Saturn, MediaMarkt & Otto`}
+            products={allProducts}
+            viewAllLink={`/kategorien/${categorySlug}`}
+            icon={icon}
+          />
+        );
+      })}
 
       {/* Features Section */}
       <div>

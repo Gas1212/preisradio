@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
 export const metadata: Metadata = {
-  title: 'Alle Kategorien | Preisradio',
+  title: 'Alle Kategorien: Finde die günstigsten Preise online',
   description: 'Durchsuchen Sie unsere Produktkategorien und finden Sie die besten Angebote im Preisvergleich',
   alternates: {
     canonical: `${baseUrl}/kategorien`,

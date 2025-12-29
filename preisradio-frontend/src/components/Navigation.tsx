@@ -36,14 +36,15 @@ export default function Navigation() {
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95">
       <div className="container mx-auto px-4">
+        {/* First row: Logo, Navigation, Mobile Menu Button */}
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-3"
+            className="flex items-center space-x-2 md:space-x-3"
             onClick={() => setMobileMenuOpen(false)}
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent text-xl font-bold text-white shadow-none overflow-hidden">
+            <div className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-lg bg-transparent text-xl font-bold text-white shadow-none overflow-hidden">
               <img
                 src="/favicon.ico"
                 alt="Preisradio Logo"
@@ -51,10 +52,10 @@ export default function Navigation() {
               />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-gray-900 dark:text-white">
+              <span className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                 Preisradio
               </span>
-              <span className="text-xs text-gray-600 dark:text-gray-400">
+              <span className="text-xs text-gray-600 dark:text-gray-400 hidden sm:block">
                 Preisvergleich
               </span>
             </div>
@@ -78,7 +79,7 @@ export default function Navigation() {
             ))}
           </nav>
 
-          {/* Search Bar - Responsive */}
+          {/* Search Bar - Desktop only */}
           <div className="hidden md:flex items-center flex-1 max-w-md mx-4">
             <form onSubmit={handleSearch} className="relative w-full">
               <input
@@ -145,6 +146,37 @@ export default function Navigation() {
               </svg>
             )}
           </button>
+        </div>
+
+        {/* Second row: Mobile Search Bar */}
+        <div className="md:hidden pb-3">
+          <form onSubmit={handleSearch} className="relative w-full">
+            <input
+              type="search"
+              placeholder="Produkt suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-gray-400"
+            />
+            <button
+              type="submit"
+              className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </button>
+          </form>
         </div>
 
         {/* Mobile Menu Dropdown */}

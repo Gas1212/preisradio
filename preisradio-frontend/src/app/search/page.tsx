@@ -13,32 +13,30 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
 function SearchContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const query = searchParams.get('q') || '';
   const categoryParam = searchParams.get('category') || '';
   const brandParam = searchParams.get('brand') || '';
   const retailerParam = searchParams.get('retailer') || '';
+  const minPriceParam = searchParams.get('min_price') || '';
+  const maxPriceParam = searchParams.get('max_price') || '';
+  const discountParam = searchParams.get('discount') || '';
+  const sortParam = searchParams.get('sort') || 'newest';
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState(query);
-  const [selectedCategory, setSelectedCategory] = useState<string>(categoryParam);
-  const [selectedBrand, setSelectedBrand] = useState<string>(brandParam);
-  const [selectedRetailer, setSelectedRetailer] = useState<string>(retailerParam);
-  const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({
-    min: '',
-    max: '',
-  });
-  const [selectedDiscount, setSelectedDiscount] = useState<string>('');
-  const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'newest'>('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize] = useState(20);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Synchronize state with URL params
   useEffect(() => {
     setCurrentPage(1);
     loadProducts(1);
-  }, [query, categoryParam, brandParam, retailerParam, selectedCategory, selectedBrand, selectedRetailer]);
+  }, [query, categoryParam, brandParam, retailerParam, minPriceParam, maxPriceParam, discountParam, sortParam]);
 
   // Update document title, canonical URL and JSON-LD
   useEffect(() => {
@@ -110,26 +108,25 @@ function SearchContent() {
 
       const response = await api.getProductsFromBothRetailers({
         search: searchQuery || query || undefined,
-        category: selectedCategory || categoryParam || undefined,
-        brand: selectedBrand || brandParam || undefined,
-        retailer: selectedRetailer || retailerParam || undefined, // Pass retailer to API
+        category: categoryParam || undefined,
+        brand: brandParam || undefined,
+        retailer: retailerParam || undefined,
         page: page,
         page_size: pageSize,
       });
 
       let results = response?.results || [];
 
-      // Filtrer par plage de prix (client-side)
-      if (priceRange.min) {
-        results = results.filter(p => p.price >= parseFloat(priceRange.min));
+      // Client-side filtering (will be moved to server later)
+      if (minPriceParam) {
+        results = results.filter(p => p.price >= parseFloat(minPriceParam));
       }
-      if (priceRange.max) {
-        results = results.filter(p => p.price <= parseFloat(priceRange.max));
+      if (maxPriceParam) {
+        results = results.filter(p => p.price <= parseFloat(maxPriceParam));
       }
 
-      // Filtrer par rabatt minimum (client-side)
-      if (selectedDiscount) {
-        const minDiscount = parseFloat(selectedDiscount);
+      if (discountParam) {
+        const minDiscount = parseFloat(discountParam);
         results = results.filter(p => {
           if (!p.discount) return false;
           const discountValue = parseFloat(p.discount.replace('%', ''));
@@ -137,12 +134,12 @@ function SearchContent() {
         });
       }
 
-      // Trier
-      if (sortBy === 'price_asc') {
+      // Sorting
+      if (sortParam === 'price_asc') {
         results.sort((a, b) => a.price - b.price);
-      } else if (sortBy === 'price_desc') {
+      } else if (sortParam === 'price_desc') {
         results.sort((a, b) => b.price - a.price);
-      } else if (sortBy === 'newest') {
+      } else if (sortParam === 'newest') {
         results.sort((a, b) => {
           const dateA = a.scraped_at ? new Date(a.scraped_at).getTime() : 0;
           const dateB = b.scraped_at ? new Date(b.scraped_at).getTime() : 0;
@@ -151,7 +148,8 @@ function SearchContent() {
       }
 
       setProducts(results);
-      setTotalCount(response?.count || 0);
+      // Fix: Use actual filtered results count instead of API count
+      setTotalCount(results.length);
     } catch (err) {
       setError('Fehler beim Laden der Suchergebnisse');
       console.error('Error loading search results:', err);
@@ -160,26 +158,33 @@ function SearchContent() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setCurrentPage(1);
-    loadProducts(1);
+  const updateURL = (params: Record<string, string>) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    });
+
+    router.push(`/search?${newParams.toString()}`, { scroll: false });
   };
 
-  const handleApplyFilters = () => {
-    setCurrentPage(1);
-    loadProducts(1);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      updateURL({ q: searchQuery });
+    }
+  };
+
+  const handleFilterChange = (filterName: string, value: string) => {
+    updateURL({ [filterName]: value });
   };
 
   const handleResetFilters = () => {
-    setSelectedCategory('');
-    setSelectedBrand('');
-    setSelectedRetailer('');
-    setPriceRange({ min: '', max: '' });
-    setSelectedDiscount('');
-    setSortBy('newest');
-    setCurrentPage(1);
-    loadProducts(1);
+    router.push(`/search${query ? `?q=${encodeURIComponent(query)}` : ''}`, { scroll: false });
   };
 
   // Extraire les categories uniques
@@ -187,6 +192,9 @@ function SearchContent() {
 
   // Extraire les marques uniques
   const brands = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort();
+
+  // Count active filters
+  const activeFiltersCount = [categoryParam, brandParam, retailerParam, minPriceParam, maxPriceParam, discountParam].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
@@ -245,9 +253,227 @@ function SearchContent() {
           </form>
         </div>
 
+        {/* Mobile Filters Button - Fixed at bottom */}
+        <button
+          onClick={() => setMobileFiltersOpen(true)}
+          className="fixed bottom-4 left-4 right-4 lg:hidden z-40 rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-2xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+          </svg>
+          <span>Filtres</span>
+          {activeFiltersCount > 0 && (
+            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-blue-600">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+
+        {/* Mobile Filters Drawer */}
+        {mobileFiltersOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setMobileFiltersOpen(false)}
+            />
+
+            {/* Drawer Panel */}
+            <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 rounded-t-2xl max-h-[85vh] overflow-y-auto transform transition-transform animate-slideUp shadow-2xl">
+              {/* Drawer content will be here */}
+              <div className="p-6">
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Filtres
+                  </h2>
+                  <button
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Filter content */}
+                <div className="space-y-5">
+                  {/* Sort */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Sortieren nach
+                    </label>
+                    <select
+                      value={sortParam}
+                      onChange={(e) => handleFilterChange('sort', e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    >
+                      <option value="newest">Neueste</option>
+                      <option value="price_asc">Preis aufsteigend</option>
+                      <option value="price_desc">Preis absteigend</option>
+                    </select>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Kategorie
+                    </label>
+                    <select
+                      value={categoryParam}
+                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    >
+                      <option value="">Alle Kategorien</option>
+                      {categories.slice(0, 20).map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Brand Filter */}
+                  {brands.length > 0 && (
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Marke
+                      </label>
+                      <select
+                        value={brandParam}
+                        onChange={(e) => handleFilterChange('brand', e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                      >
+                        <option value="">Alle Marken</option>
+                        {brands.slice(0, 20).map((brand) => (
+                          <option key={brand} value={brand}>
+                            {brand}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Retailer Filter */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Haendler
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="retailer-mobile"
+                          value=""
+                          checked={retailerParam === ''}
+                          onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Alle</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="retailer-mobile"
+                          value="saturn"
+                          checked={retailerParam === 'saturn'}
+                          onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Saturn</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="retailer-mobile"
+                          value="mediamarkt"
+                          checked={retailerParam === 'mediamarkt'}
+                          onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">MediaMarkt</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="retailer-mobile"
+                          value="otto"
+                          checked={retailerParam === 'otto'}
+                          onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Otto</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Price Range Filter */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Preisspanne (EUR)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        placeholder="Min"
+                        value={minPriceParam}
+                        onChange={(e) => handleFilterChange('min_price', e.target.value)}
+                        className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                      />
+                      <input
+                        type="number"
+                        placeholder="Max"
+                        value={maxPriceParam}
+                        onChange={(e) => handleFilterChange('max_price', e.target.value)}
+                        className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Discount Filter */}
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Rabatt mindestens
+                    </label>
+                    <select
+                      value={discountParam}
+                      onChange={(e) => handleFilterChange('discount', e.target.value)}
+                      className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                    >
+                      <option value="">Alle Produkte</option>
+                      <option value="5">5% oder mehr</option>
+                      <option value="10">10% oder mehr</option>
+                      <option value="15">15% oder mehr</option>
+                      <option value="20">20% oder mehr</option>
+                      <option value="30">30% oder mehr</option>
+                      <option value="50">50% oder mehr</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Footer with Apply button */}
+                <div className="sticky bottom-0 left-0 right-0 bg-white dark:bg-zinc-900 pt-6 pb-4 border-t border-gray-200 dark:border-zinc-800 flex gap-3">
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex-1 rounded-lg border border-gray-300 dark:border-zinc-700 px-4 py-3 font-semibold text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                  >
+                    Zurücksetzen
+                  </button>
+                  <button
+                    onClick={() => setMobileFiltersOpen(false)}
+                    className="flex-[2] rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 transition-colors"
+                  >
+                    {totalCount} {totalCount === 1 ? 'Ergebnis' : 'Ergebnisse'} anzeigen
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-          {/* Sidebar Filters */}
-          <aside className="mb-8 lg:col-span-1 lg:mb-0">
+          {/* Sidebar Filters - Hidden on mobile */}
+          <aside className="hidden lg:block lg:col-span-1">
             <div className="rounded-xl bg-white p-6 shadow-lg dark:bg-zinc-900">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -267,11 +493,8 @@ function SearchContent() {
                   Sortieren nach
                 </label>
                 <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value as any);
-                    setTimeout(() => loadProducts(), 0);
-                  }}
+                  value={sortParam}
+                  onChange={(e) => handleFilterChange('sort', e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                   <option value="newest">Neueste</option>
@@ -286,8 +509,8 @@ function SearchContent() {
                   Kategorie
                 </label>
                 <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  value={categoryParam}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                   <option value="">Alle Kategorien</option>
@@ -306,8 +529,8 @@ function SearchContent() {
                     Marke
                   </label>
                   <select
-                    value={selectedBrand}
-                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    value={brandParam}
+                    onChange={(e) => handleFilterChange('brand', e.target.value)}
                     className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   >
                     <option value="">Alle Marken</option>
@@ -331,8 +554,8 @@ function SearchContent() {
                       type="radio"
                       name="retailer"
                       value=""
-                      checked={selectedRetailer === ''}
-                      onChange={(e) => setSelectedRetailer(e.target.value)}
+                      checked={retailerParam === ''}
+                      onChange={(e) => handleFilterChange('retailer', e.target.value)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Alle</span>
@@ -342,8 +565,8 @@ function SearchContent() {
                       type="radio"
                       name="retailer"
                       value="saturn"
-                      checked={selectedRetailer === 'saturn'}
-                      onChange={(e) => setSelectedRetailer(e.target.value)}
+                      checked={retailerParam === 'saturn'}
+                      onChange={(e) => handleFilterChange('retailer', e.target.value)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Saturn</span>
@@ -353,8 +576,8 @@ function SearchContent() {
                       type="radio"
                       name="retailer"
                       value="mediamarkt"
-                      checked={selectedRetailer === 'mediamarkt'}
-                      onChange={(e) => setSelectedRetailer(e.target.value)}
+                      checked={retailerParam === 'mediamarkt'}
+                      onChange={(e) => handleFilterChange('retailer', e.target.value)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">MediaMarkt</span>
@@ -364,8 +587,8 @@ function SearchContent() {
                       type="radio"
                       name="retailer"
                       value="otto"
-                      checked={selectedRetailer === 'otto'}
-                      onChange={(e) => setSelectedRetailer(e.target.value)}
+                      checked={retailerParam === 'otto'}
+                      onChange={(e) => handleFilterChange('retailer', e.target.value)}
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Otto</span>
@@ -382,15 +605,15 @@ function SearchContent() {
                   <input
                     type="number"
                     placeholder="Min"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                    value={minPriceParam}
+                    onChange={(e) => handleFilterChange('min_price', e.target.value)}
                     className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   />
                   <input
                     type="number"
                     placeholder="Max"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                    value={maxPriceParam}
+                    onChange={(e) => handleFilterChange('max_price', e.target.value)}
                     className="w-1/2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                   />
                 </div>
@@ -402,8 +625,8 @@ function SearchContent() {
                   Rabatt mindestens
                 </label>
                 <select
-                  value={selectedDiscount}
-                  onChange={(e) => setSelectedDiscount(e.target.value)}
+                  value={discountParam}
+                  onChange={(e) => handleFilterChange('discount', e.target.value)}
                   className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
                 >
                   <option value="">Alle Produkte</option>
@@ -415,13 +638,6 @@ function SearchContent() {
                   <option value="50">50% oder mehr</option>
                 </select>
               </div>
-
-              <button
-                onClick={handleApplyFilters}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
-                Filter anwenden
-              </button>
             </div>
           </aside>
 

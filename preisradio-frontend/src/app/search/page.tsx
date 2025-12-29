@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Product } from '@/lib/types';
 import api from '@/lib/api';
 import ProductCard from '@/components/ProductCard';

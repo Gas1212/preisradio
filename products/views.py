@@ -7,11 +7,12 @@ from django.views.decorators.http import condition
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from mongoengine.queryset.visitor import Q
-from .models import SaturnProduct, MediaMarktProduct, OttoProduct
+from .models import SaturnProduct, MediaMarktProduct, OttoProduct, KauflandProduct
 from .serializers import (
     SaturnProductSerializer,
     MediaMarktProductSerializer,
     OttoProductSerializer,
+    KauflandProductSerializer,
 )
 from .google_merchant import get_merchant_service
 from datetime import datetime
@@ -26,7 +27,7 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 
 class RetailerViewSet(viewsets.ViewSet):
-    """ViewSet for retailers (Saturn, MediaMarkt, and Otto)"""
+    """ViewSet for retailers (Saturn, MediaMarkt, Otto, and Kaufland)"""
 
     def list(self, request):
         """List all retailers"""
@@ -48,6 +49,12 @@ class RetailerViewSet(viewsets.ViewSet):
                 'name': 'Otto',
                 'website': 'https://www.otto.de',
                 'category_count': self._safe_count(OttoProduct)
+            },
+            {
+                'id': 'kaufland',
+                'name': 'Kaufland',
+                'website': 'https://www.kaufland.de',
+                'category_count': self._safe_count(KauflandProduct)
             }
         ]
         return Response({'results': retailers})
@@ -80,6 +87,12 @@ class RetailerViewSet(viewsets.ViewSet):
                 'name': 'Otto',
                 'website': 'https://www.otto.de',
                 'product_count': self._safe_count(OttoProduct)
+            },
+            'kaufland': {
+                'id': 'kaufland',
+                'name': 'Kaufland',
+                'website': 'https://www.kaufland.de',
+                'product_count': self._safe_count(KauflandProduct)
             }
         }
         if pk in retailers:
@@ -88,7 +101,7 @@ class RetailerViewSet(viewsets.ViewSet):
 
 
 class ProductViewSet(viewsets.ViewSet):
-    """ViewSet for products from all retailers (Saturn, MediaMarkt, and Otto)"""
+    """ViewSet for products from all retailers (Saturn, MediaMarkt, Otto, and Kaufland)"""
 
     def _calculate_search_relevance(self, product, search_term):
         """Calculate relevance score for a product based on search term match.
@@ -152,6 +165,7 @@ class ProductViewSet(viewsets.ViewSet):
         saturn_query = None
         mediamarkt_query = None
         otto_query = None
+        kaufland_query = None
 
         if retailer in ['all', 'saturn']:
             saturn_query = SaturnProduct.objects()
@@ -189,6 +203,20 @@ class ProductViewSet(viewsets.ViewSet):
                 otto_query = otto_query.filter(brand=brand)
             if search:
                 otto_query = otto_query.filter(
+                    Q(title__icontains=search) |
+                    Q(gtin__icontains=search) |
+                    Q(description__icontains=search) |
+                    Q(brand__icontains=search)
+                )
+
+        if retailer in ['all', 'kaufland']:
+            kaufland_query = KauflandProduct.objects()
+            if category:
+                kaufland_query = kaufland_query.filter(category=category)
+            if brand:
+                kaufland_query = kaufland_query.filter(brand=brand)
+            if search:
+                kaufland_query = kaufland_query.filter(
                     Q(title__icontains=search) |
                     Q(gtin__icontains=search) |
                     Q(description__icontains=search) |
@@ -246,13 +274,29 @@ class ProductViewSet(viewsets.ViewSet):
             page_products = otto_with_scores[start:end]
             page_products = [(p, source) for p, source, _ in page_products]
 
+        elif retailer == 'kaufland':
+            # Single retailer pagination with relevance scoring
+            # Limit to max of 10000 to respect MAX_PAGE_SIZE setting
+            query_limit = min(page_size * 2, 10000)
+            kaufland_results = list(kaufland_query.order_by('-scraped_at').limit(query_limit)) if kaufland_query else []
+            total_count = kaufland_query.count() if kaufland_query else 0
+
+            # Add relevance scores and sort by score (descending), then by date
+            kaufland_with_scores = [(p, 'kaufland', self._calculate_search_relevance(p, search)) for p in kaufland_results]
+            kaufland_with_scores.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+
+            # Apply pagination after sorting
+            end = start + page_size
+            page_products = kaufland_with_scores[start:end]
+            page_products = [(p, source) for p, source, _ in page_products]
+
         else:
-            # For 'all' retailers - load from both and merge with relevance scoring
+            # For 'all' retailers - load from all and merge with relevance scoring
             saturn_count = saturn_query.count() if saturn_query else 0
             mediamarkt_count = mediamarkt_query.count() if mediamarkt_query else 0
-            total_count = saturn_count + mediamarkt_count
             otto_count = otto_query.count() if otto_query else 0
-            total_count = saturn_count + mediamarkt_count + otto_count
+            kaufland_count = kaufland_query.count() if kaufland_query else 0
+            total_count = saturn_count + mediamarkt_count + otto_count + kaufland_count
 
             # Load enough results to ensure good page results after sorting
             # Cap at 10000 to respect MAX_PAGE_SIZE setting
@@ -261,11 +305,13 @@ class ProductViewSet(viewsets.ViewSet):
             saturn_results = list(saturn_query.order_by('-scraped_at').limit(load_size)) if saturn_query else []
             mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(load_size)) if mediamarkt_query else []
             otto_results = list(otto_query.order_by('-scraped_at').limit(load_size)) if otto_query else []
+            kaufland_results = list(kaufland_query.order_by('-scraped_at').limit(load_size)) if kaufland_query else []
 
             # Combine products with relevance scores
             products = [(p, 'saturn', self._calculate_search_relevance(p, search)) for p in saturn_results]
             products += [(p, 'mediamarkt', self._calculate_search_relevance(p, search)) for p in mediamarkt_results]
             products += [(p, 'otto', self._calculate_search_relevance(p, search)) for p in otto_results]
+            products += [(p, 'kaufland', self._calculate_search_relevance(p, search)) for p in kaufland_results]
 
             # Sort by relevance score (descending), then by date (most recent first)
             products.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
@@ -284,6 +330,8 @@ class ProductViewSet(viewsets.ViewSet):
                 serializer = MediaMarktProductSerializer(product)
             elif source == 'otto':
                 serializer = OttoProductSerializer(product)
+            elif source == 'kaufland':
+                serializer = KauflandProductSerializer(product)
             else:
                 continue  # Unknown retailer
             data = serializer.data
@@ -330,6 +378,16 @@ class ProductViewSet(viewsets.ViewSet):
             data['retailer'] = 'otto'
             return Response(data)
         except OttoProduct.DoesNotExist:
+            pass
+
+        # Try Kaufland
+        try:
+            product = KauflandProduct.objects.get(id=pk)
+            serializer = KauflandProductSerializer(product)
+            data = serializer.data
+            data['retailer'] = 'kaufland'
+            return Response(data)
+        except KauflandProduct.DoesNotExist:
             return Response({'detail': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
 
     @action(detail=False, methods=['get'])
@@ -348,9 +406,10 @@ class ProductViewSet(viewsets.ViewSet):
         saturn_categories = list(SaturnProduct.objects.distinct('category'))
         mediamarkt_categories = list(MediaMarktProduct.objects.distinct('category'))
         otto_categories = list(OttoProduct.objects.distinct('category'))
+        kaufland_categories = list(KauflandProduct.objects.distinct('category'))
 
         # Combine all categories
-        all_categories_set = set(saturn_categories + mediamarkt_categories + otto_categories)
+        all_categories_set = set(saturn_categories + mediamarkt_categories + otto_categories + kaufland_categories)
 
         # Count products per category
         categories_with_count = []
@@ -358,14 +417,16 @@ class ProductViewSet(viewsets.ViewSet):
             saturn_count = SaturnProduct.objects.filter(category=category).count()
             mediamarkt_count = MediaMarktProduct.objects.filter(category=category).count()
             otto_count = OttoProduct.objects.filter(category=category).count()
-            total_count = saturn_count + mediamarkt_count + otto_count
+            kaufland_count = KauflandProduct.objects.filter(category=category).count()
+            total_count = saturn_count + mediamarkt_count + otto_count + kaufland_count
 
             categories_with_count.append({
                 'name': category,
                 'count': total_count,
                 'saturn_count': saturn_count,
                 'mediamarkt_count': mediamarkt_count,
-                'otto_count': otto_count
+                'otto_count': otto_count,
+                'kaufland_count': kaufland_count
             })
 
         # Sort by product count (most popular first)
@@ -437,6 +498,15 @@ class ProductViewSet(viewsets.ViewSet):
             data['retailer'] = 'otto'
             products.append(data)
         except OttoProduct.DoesNotExist:
+            pass
+
+        try:
+            kaufland_product = KauflandProduct.objects.get(gtin=gtin)
+            serializer = KauflandProductSerializer(kaufland_product)
+            data = serializer.data
+            data['retailer'] = 'kaufland'
+            products.append(data)
+        except KauflandProduct.DoesNotExist:
             pass
 
         if not products:
@@ -613,6 +683,12 @@ class ProductViewSet(viewsets.ViewSet):
                 .limit(limit)
             )
 
+            kaufland_products = list(
+                KauflandProduct.objects.only('id', 'scraped_at')
+                .order_by('-scraped_at')
+                .limit(limit)
+            )
+
             # Combine and format for sitemap
             all_products = []
 
@@ -634,6 +710,12 @@ class ProductViewSet(viewsets.ViewSet):
                     'lastModified': p.scraped_at.isoformat() if p.scraped_at else datetime.now().isoformat()
                 })
 
+            for p in kaufland_products:
+                all_products.append({
+                    'id': str(p.id),
+                    'lastModified': p.scraped_at.isoformat() if p.scraped_at else datetime.now().isoformat()
+                })
+
             # Sort by date descending
             all_products.sort(key=lambda x: x['lastModified'], reverse=True)
 
@@ -641,7 +723,8 @@ class ProductViewSet(viewsets.ViewSet):
             total_saturn = SaturnProduct.objects.count()
             total_mediamarkt = MediaMarktProduct.objects.count()
             total_otto = OttoProduct.objects.count()
-            total_count = total_saturn + total_mediamarkt + total_otto
+            total_kaufland = KauflandProduct.objects.count()
+            total_count = total_saturn + total_mediamarkt + total_otto + total_kaufland
 
             return Response({
                 'count': total_count,
@@ -673,6 +756,7 @@ class ProductViewSet(viewsets.ViewSet):
             saturn_products = list(SaturnProduct.objects.order_by('-scraped_at'))
             mediamarkt_products = list(MediaMarktProduct.objects.order_by('-scraped_at'))
             otto_products = list(OttoProduct.objects.order_by('-scraped_at'))
+            kaufland_products = list(KauflandProduct.objects.order_by('-scraped_at'))
 
             # Create RSS XML structure
             rss = Element('rss', {
@@ -737,6 +821,9 @@ class ProductViewSet(viewsets.ViewSet):
 
             for product in otto_products:
                 add_product_to_feed(product, 'Otto')
+
+            for product in kaufland_products:
+                add_product_to_feed(product, 'Kaufland')
 
             # Convert to pretty XML string
             xml_string = minidom.parseString(tostring(rss, encoding='utf-8')).toprettyxml(indent='  ', encoding='utf-8')
@@ -841,6 +928,24 @@ class ProductViewSet(viewsets.ViewSet):
                         'category': p.category,
                     }
                     for p in otto_products
+                ])
+
+            if retailer in ['kaufland', 'all']:
+                kaufland_products = list(
+                    KauflandProduct.objects.order_by('-scraped_at').limit(limit)
+                )
+                all_products.extend([
+                    {
+                        'id': str(p.id),
+                        'title': p.title,
+                        'description': p.description,
+                        'price': p.price,
+                        'image': p.image,
+                        'brand': p.brand,
+                        'gtin': p.gtin,
+                        'category': p.category,
+                    }
+                    for p in kaufland_products
                 ])
 
             # Limit total products if needed

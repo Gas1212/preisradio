@@ -375,6 +375,17 @@ function SearchContent() {
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">Otto</span>
                       </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="retailer-mobile"
+                          value="kaufland"
+                          checked={retailerParam === 'kaufland'}
+                          onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Kaufland</span>
+                      </label>
                     </div>
                   </div>
 
@@ -563,6 +574,17 @@ function SearchContent() {
                       className="mr-2"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Otto</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="retailer"
+                      value="kaufland"
+                      checked={retailerParam === 'kaufland'}
+                      onChange={(e) => handleFilterChange('retailer', e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Kaufland</span>
                   </label>
                 </div>
               </div>

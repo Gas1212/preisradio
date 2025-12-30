@@ -110,16 +110,23 @@ OTTO_URI = os.getenv('MONGODB_OTTO_URI', 'mongodb+srv://stronglimitless76_db_use
 OTTO_DB = os.getenv('MONGODB_OTTO_DB', 'Otto')
 OTTO_COLLECTION = os.getenv('MONGODB_OTTO_COLLECTION', 'Db')
 
+# Kaufland Database Configuration
+KAUFLAND_URI = os.getenv('MONGODB_KAUFLAND_URI', 'mongodb+srv://stronglimitless76_db_user:h4Z4KFmx6Iwm6e4I@kaufland.hsxmfh8.mongodb.net/')
+KAUFLAND_DB = os.getenv('MONGODB_KAUFLAND_DB', 'Kaufland')
+KAUFLAND_COLLECTION = os.getenv('MONGODB_KAUFLAND_COLLECTION', 'Db')
+
 # Build full URIs with database names
 SATURN_FULL_URI = f"{SATURN_URI}{SATURN_DB}?retryWrites=true&w=majority"
 MEDIAMARKT_FULL_URI = f"{MEDIAMARKT_URI}{MEDIAMARKT_DB}?retryWrites=true&w=majority"
 OTTO_FULL_URI = f"{OTTO_URI}{OTTO_DB}?retryWrites=true&w=majority"
+KAUFLAND_FULL_URI = f"{KAUFLAND_URI}{KAUFLAND_DB}?retryWrites=true&w=majority"
 
 # Print configuration for debugging
 print(f"📊 MongoDB Configuration:")
 print(f"   Saturn DB: {SATURN_DB}, Collection: {SATURN_COLLECTION}")
 print(f"   MediaMarkt DB: {MEDIAMARKT_DB}, Collection: {MEDIAMARKT_COLLECTION}")
 print(f"   Otto DB: {OTTO_DB}, Collection: {OTTO_COLLECTION}")
+print(f"   Kaufland DB: {KAUFLAND_DB}, Collection: {KAUFLAND_COLLECTION}")
 
 # Initialize MongoDB connections
 # Disconnect existing connections to avoid duplicate registration errors
@@ -135,6 +142,11 @@ except:
 
 try:
     mongoengine.disconnect(alias='otto')
+except:
+    pass
+
+try:
+    mongoengine.disconnect(alias='kaufland')
 except:
     pass
 
@@ -181,6 +193,20 @@ try:
     print("✓ Otto database connected successfully")
 except Exception as e:
     print(f"✗ Otto database connection failed: {e}")
+
+# Connect to Kaufland database
+try:
+    mongoengine.connect(
+        alias='kaufland',
+        host=KAUFLAND_FULL_URI,
+        connectTimeoutMS=30000,
+        serverSelectionTimeoutMS=30000,
+        socketTimeoutMS=30000,
+        maxPoolSize=100,
+    )
+    print("✓ Kaufland database connected successfully")
+except Exception as e:
+    print(f"✗ Kaufland database connection failed: {e}")
 
 
 # Google Merchant Center Configuration

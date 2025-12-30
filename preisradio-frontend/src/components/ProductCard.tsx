@@ -20,6 +20,8 @@ export default function ProductCard({ product }: ProductCardProps) {
       return { name: 'MediaMarkt', bgColor: 'bg-red-700', textColor: 'text-white' };
     } else if (retailer === 'otto') {
       return { name: 'Otto', bgColor: 'bg-blue-600', textColor: 'text-white' };
+    } else if (retailer === 'kaufland') {
+      return { name: 'Kaufland', bgColor: 'bg-green-600', textColor: 'text-white' };
     }
     return { name: 'Händler', bgColor: 'bg-gray-600', textColor: 'text-white' };
   };

@@ -362,7 +362,24 @@ class ProductViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         """Retrieve a product by ID"""
-        # Try Saturn first
+        # Try Kaufland first for debugging
+        try:
+            product = KauflandProduct.objects.get(id=pk)
+            serializer = KauflandProductSerializer(product)
+            data = serializer.data
+            data['retailer'] = 'kaufland'
+            return Response(data)
+        except KauflandProduct.DoesNotExist as e:
+            print(f"Kaufland DoesNotExist for ID {pk}")
+            pass
+        except Exception as e:
+            # Log Kaufland-specific errors for debugging
+            print(f"Kaufland product retrieve error for ID {pk}: {type(e).__name__}: {e}")
+            import traceback
+            traceback.print_exc()
+            pass
+
+        # Try Saturn
         try:
             product = SaturnProduct.objects.get(id=pk)
             serializer = SaturnProductSerializer(product)
@@ -390,27 +407,6 @@ class ProductViewSet(viewsets.ViewSet):
             data['retailer'] = 'otto'
             return Response(data)
         except OttoProduct.DoesNotExist:
-            pass
-
-        # Try Kaufland
-        try:
-            # Convert string ID to ObjectId for MongoDB query
-            try:
-                object_id = ObjectId(pk)
-                product = KauflandProduct.objects.get(id=object_id)
-            except:
-                # If ObjectId conversion fails, try with string ID directly
-                product = KauflandProduct.objects.get(id=pk)
-
-            serializer = KauflandProductSerializer(product)
-            data = serializer.data
-            data['retailer'] = 'kaufland'
-            return Response(data)
-        except KauflandProduct.DoesNotExist:
-            pass
-        except Exception as e:
-            # Log Kaufland-specific errors for debugging
-            print(f"Kaufland product retrieve error for ID {pk}: {type(e).__name__}: {e}")
             pass
 
         return Response({'detail': 'Not found'}, status=status.HTTP_404_NOT_FOUND)

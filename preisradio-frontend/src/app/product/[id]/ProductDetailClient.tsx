@@ -115,6 +115,8 @@ export default function ProductDetailClient({
       return { name: 'MediaMarkt', color: 'bg-red-700', logo: '📺' };
     } else if (retailer === 'otto') {
       return { name: 'Otto', color: 'bg-blue-600', logo: '🛒' };
+    } else if (retailer === 'kaufland') {
+      return { name: 'Kaufland', color: 'bg-green-600', logo: '🛍️' };
     }
     return { name: 'Händler', color: 'bg-gray-600', logo: '🏪' };
   };

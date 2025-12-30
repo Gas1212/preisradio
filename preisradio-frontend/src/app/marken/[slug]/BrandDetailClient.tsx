@@ -152,7 +152,7 @@ export default function BrandDetailClient({
               {brandName || 'Marke'}
             </h1>
             <p className="mx-auto max-w-2xl text-base md:text-lg text-gray-600 dark:text-gray-400">
-              Alle Produkte von {brandName} bei Saturn, MediaMarkt und Otto
+              Alle Produkte von {brandName} bei Saturn, MediaMarkt, Otto und Kaufland
             </p>
           </div>
         </div>
@@ -328,7 +328,8 @@ export default function BrandDetailClient({
                           const retailerNames: Record<string, string> = {
                             'saturn': 'Saturn',
                             'mediamarkt': 'MediaMarkt',
-                            'otto': 'Otto'
+                            'otto': 'Otto',
+                            'kaufland': 'Kaufland'
                           };
                           const displayName = retailer ? (retailerNames[retailer] || retailer) : retailer;
                           return (

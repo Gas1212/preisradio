@@ -12,6 +12,7 @@ interface CategorySection {
   saturnProducts: Product[];
   mediamarktProducts: Product[];
   ottoProducts: Product[];
+  kauflandProducts: Product[];
 }
 
 export default function HomeContent() {
@@ -88,7 +89,8 @@ export default function HomeContent() {
           category,
           saturnProducts: response.results.filter(p => p.retailer === 'saturn'),
           mediamarktProducts: response.results.filter(p => p.retailer === 'mediamarkt'),
-          ottoProducts: response.results.filter(p => p.retailer === 'otto')
+          ottoProducts: response.results.filter(p => p.retailer === 'otto'),
+          kauflandProducts: response.results.filter(p => p.retailer === 'kaufland')
         });
       }
 
@@ -267,10 +269,10 @@ export default function HomeContent() {
             <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Händler</p>
               <p className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                3
+                4
               </p>
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                Saturn, MediaMarkt & Otto
+                Saturn, MediaMarkt, Otto & Kaufland
               </p>
             </div>
             <div className="rounded-full bg-green-100 p-4 dark:bg-green-900">
@@ -307,7 +309,8 @@ export default function HomeContent() {
         const allProducts = [
           ...section.saturnProducts,
           ...section.mediamarktProducts,
-          ...section.ottoProducts
+          ...section.ottoProducts,
+          ...section.kauflandProducts
         ];
 
         const categorySlug = section.category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -317,7 +320,7 @@ export default function HomeContent() {
           <ProductSection
             key={section.category.name}
             title={section.category.name}
-            description={`${section.category.count} Produkte von Saturn, MediaMarkt & Otto`}
+            description={`${section.category.count} Produkte von Saturn, MediaMarkt, Otto & Kaufland`}
             products={allProducts}
             viewAllLink={`/kategorien/${categorySlug}`}
             icon={icon}

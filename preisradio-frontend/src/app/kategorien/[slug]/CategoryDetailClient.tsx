@@ -249,6 +249,17 @@ export default function CategoryDetailClient({
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">Otto</span>
                   </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="retailer"
+                      value="kaufland"
+                      checked={selectedRetailer === 'kaufland'}
+                      onChange={(e) => setSelectedRetailer(e.target.value)}
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">Kaufland</span>
+                  </label>
                 </div>
               </div>
 

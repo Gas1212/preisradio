@@ -7,6 +7,7 @@ from django.views.decorators.http import condition
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from mongoengine.queryset.visitor import Q
+from bson import ObjectId
 from .models import SaturnProduct, MediaMarktProduct, OttoProduct, KauflandProduct
 from .serializers import (
     SaturnProductSerializer,
@@ -393,7 +394,14 @@ class ProductViewSet(viewsets.ViewSet):
 
         # Try Kaufland
         try:
-            product = KauflandProduct.objects.get(id=pk)
+            # Convert string ID to ObjectId for MongoDB query
+            try:
+                object_id = ObjectId(pk)
+                product = KauflandProduct.objects.get(id=object_id)
+            except:
+                # If ObjectId conversion fails, try with string ID directly
+                product = KauflandProduct.objects.get(id=pk)
+
             serializer = KauflandProductSerializer(product)
             data = serializer.data
             data['retailer'] = 'kaufland'

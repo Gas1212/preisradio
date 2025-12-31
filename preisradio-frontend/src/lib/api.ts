@@ -95,8 +95,8 @@ class ApiClient {
         });
       }
 
-      // Charger en parallèle depuis Saturn, MediaMarkt et Otto
-      const [saturnResponse, mediamarktResponse, ottoResponse] = await Promise.all([
+      // Charger en parallèle depuis Saturn, MediaMarkt, Otto et Kaufland
+      const [saturnResponse, mediamarktResponse, ottoResponse, kauflandResponse] = await Promise.all([
         this.getProducts({
           search: params?.search,
           category: params?.category,
@@ -121,6 +121,14 @@ class ApiClient {
           page: page,
           page_size: pageSize,
         }),
+        this.getProducts({
+          search: params?.search,
+          category: params?.category,
+          brand: params?.brand,
+          retailer: 'kaufland',
+          page: page,
+          page_size: pageSize,
+        }),
       ]);
 
       // Mélanger les résultats de manière alternée
@@ -128,7 +136,8 @@ class ApiClient {
       const maxLength = Math.max(
         saturnResponse.results.length,
         mediamarktResponse.results.length,
-        ottoResponse.results.length
+        ottoResponse.results.length,
+        kauflandResponse.results.length
       );
 
       for (let i = 0; i < maxLength; i++) {
@@ -141,13 +150,16 @@ class ApiClient {
         if (i < ottoResponse.results.length) {
           mixedResults.push(ottoResponse.results[i]);
         }
+        if (i < kauflandResponse.results.length) {
+          mixedResults.push(kauflandResponse.results[i]);
+        }
       }
 
       // Check if there are more results on the next page
-      const hasNextPage = saturnResponse.next !== null || mediamarktResponse.next !== null || ottoResponse.next !== null;
+      const hasNextPage = saturnResponse.next !== null || mediamarktResponse.next !== null || ottoResponse.next !== null || kauflandResponse.next !== null;
 
       return {
-        count: saturnResponse.count + mediamarktResponse.count + ottoResponse.count,
+        count: saturnResponse.count + mediamarktResponse.count + ottoResponse.count + kauflandResponse.count,
         next: hasNextPage ? `?page=${page + 1}` : null,
         previous: page > 1 ? `?page=${page - 1}` : null,
         results: mixedResults,

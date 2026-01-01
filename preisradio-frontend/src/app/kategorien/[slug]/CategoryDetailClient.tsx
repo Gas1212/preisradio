@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import ProductCard from '@/components/ProductCard';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import Link from 'next/link';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
@@ -137,28 +138,16 @@ export default function CategoryDetailClient({
       <Navigation />
 
       <main className="container mx-auto px-4 py-8 md:py-12">
-        {/* Header with Back Button */}
-        <div className="mb-8">
-          <Link
-            href="/kategorien"
-            className="mb-4 inline-flex items-center text-sm text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
-          >
-            <svg
-              className="mr-2 h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            Zurück zu allen Kategorien
-          </Link>
+        {/* Breadcrumbs */}
+        <Breadcrumbs
+          items={[
+            { label: 'Kategorien', href: '/kategorien' },
+            { label: categoryName }
+          ]}
+        />
 
+        {/* Header */}
+        <div className="mb-8">
           <h1 className="mb-3 text-3xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             {categoryName}
           </h1>

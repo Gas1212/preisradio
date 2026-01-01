@@ -108,6 +108,9 @@ export function generateBreadcrumbSchema(
   product: Product,
   baseUrl: string
 ): BreadcrumbList {
+  // Generate SEO-friendly category slug
+  const categorySlug = product.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -122,7 +125,7 @@ export function generateBreadcrumbSchema(
         '@type': 'ListItem',
         position: 2,
         name: product.category,
-        item: `${baseUrl}/search?category=${encodeURIComponent(product.category)}`,
+        item: `${baseUrl}/kategorien/${categorySlug}`,
       },
       {
         '@type': 'ListItem',

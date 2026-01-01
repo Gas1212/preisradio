@@ -19,7 +19,7 @@ export async function generateSitemaps() {
 
 // Helper function to fetch all products from all retailers
 async function fetchAllProducts() {
-  const [saturnResponse, mediamarktResponse, ottoResponse] = await Promise.all([
+  const [saturnResponse, mediamarktResponse, ottoResponse, kauflandResponse] = await Promise.all([
     fetch(`${API_URL}/products/?page_size=10000&retailer=saturn`, {
       next: { revalidate: 86400 }, // Cache for 24 hours
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
@@ -29,6 +29,10 @@ async function fetchAllProducts() {
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
     }),
     fetch(`${API_URL}/products/?page_size=10000&retailer=otto`, {
+      next: { revalidate: 86400 }, // Cache for 24 hours
+      headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
+    }),
+    fetch(`${API_URL}/products/?page_size=10000&retailer=kaufland`, {
       next: { revalidate: 86400 }, // Cache for 24 hours
       headers: { 'User-Agent': 'Preisradio-SitemapGenerator/1.0' },
     }),
@@ -46,6 +50,10 @@ async function fetchAllProducts() {
   }
   if (ottoResponse.ok) {
     const data = await ottoResponse.json();
+    allProducts.push(...(data.results || []));
+  }
+  if (kauflandResponse.ok) {
+    const data = await kauflandResponse.json();
     allProducts.push(...(data.results || []));
   }
 

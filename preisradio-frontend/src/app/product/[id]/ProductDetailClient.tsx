@@ -415,7 +415,15 @@ export default function ProductDetailClient({
               href={`/search?retailer=${product.retailer}`}
               className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md transition-all hover:scale-105"
             >
-              <span className="text-base">{retailerInfo.logo}</span>
+              {retailerInfo.logo && (
+                <Image
+                  src={retailerInfo.logo}
+                  alt={retailerInfo.name}
+                  width={60}
+                  height={20}
+                  className="h-4 w-auto object-contain"
+                />
+              )}
               Alle {retailerInfo.name} Angebote
             </Link>
           </div>

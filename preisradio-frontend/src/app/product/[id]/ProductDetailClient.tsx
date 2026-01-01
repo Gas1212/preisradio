@@ -123,6 +123,10 @@ export default function ProductDetailClient({
 
   const retailerInfo = getRetailerInfo(product.retailer);
 
+  // Generate SEO-friendly slugs
+  const categorySlug = product.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const brandSlug = product.brand ? product.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-950">
       <Navigation />
@@ -135,7 +139,7 @@ export default function ProductDetailClient({
           </Link>
           <span className="text-gray-400">/</span>
           <Link
-            href={`/search?category=${encodeURIComponent(product.category)}`}
+            href={`/kategorien/${categorySlug}`}
             className="text-gray-600 hover:text-blue-600 dark:text-gray-400 transition-colors"
           >
             {product.category}
@@ -186,15 +190,18 @@ export default function ProductDetailClient({
             {/* Category & Retailer */}
             <div className="flex flex-wrap gap-2 md:gap-3">
               <Link
-                href={`/search?category=${encodeURIComponent(product.category)}`}
+                href={`/kategorien/${categorySlug}`}
                 className="inline-block rounded-full bg-blue-100 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-blue-800 hover:bg-blue-200 transition-colors dark:bg-blue-900 dark:text-blue-200"
               >
                 {product.category}
               </Link>
-              <span className={`inline-flex items-center gap-1.5 md:gap-2 rounded-full ${retailerInfo.color} px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white`}>
+              <Link
+                href={`/search?retailer=${product.retailer}`}
+                className={`inline-flex items-center gap-1.5 md:gap-2 rounded-full ${retailerInfo.color} px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-semibold text-white hover:opacity-90 transition-opacity`}
+              >
                 <span>{retailerInfo.logo}</span>
                 <span>{retailerInfo.name}</span>
-              </span>
+              </Link>
               {product.discount && (
                 <span className="inline-block rounded-full bg-red-500 px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-bold text-white animate-pulse">
                   {product.discount} RABATT
@@ -210,13 +217,13 @@ export default function ProductDetailClient({
             {/* Brand */}
             {product.brand && (
               <Link
-                href={`/marken/${encodeURIComponent(product.brand)}`}
+                href={`/marken/${brandSlug}`}
                 className="inline-flex items-center gap-2 text-base md:text-lg font-semibold text-gray-700 hover:text-blue-600 dark:text-gray-300 dark:hover:text-blue-400 transition-colors"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
-                {product.brand}
+                Marke: {product.brand}
               </Link>
             )}
 
@@ -384,6 +391,40 @@ export default function ProductDetailClient({
         {/* Price Comparison */}
         <PriceComparison currentProduct={product} />
 
+        {/* Quick Links Section */}
+        <div className="mb-8 rounded-2xl bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-6 dark:from-zinc-800 dark:via-zinc-800 dark:to-zinc-800 border border-blue-100 dark:border-zinc-700">
+          <h2 className="mb-4 text-lg font-bold text-gray-900 dark:text-white">Verwandte Seiten</h2>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/kategorien/${categorySlug}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md transition-all hover:scale-105"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              Alle {product.category}
+            </Link>
+            {product.brand && (
+              <Link
+                href={`/marken/${brandSlug}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md transition-all hover:scale-105"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                Alle {product.brand} Produkte
+              </Link>
+            )}
+            <Link
+              href={`/search?retailer=${product.retailer}`}
+              className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:shadow-md transition-all hover:scale-105"
+            >
+              <span className="text-base">{retailerInfo.logo}</span>
+              Alle {retailerInfo.name} Angebote
+            </Link>
+          </div>
+        </div>
+
         {/* Similar Products - With Category Link */}
         <div className="mt-8">
           <div className="mb-6 flex items-center justify-between">
@@ -391,7 +432,7 @@ export default function ProductDetailClient({
               Ähnliche Produkte
             </h2>
             <Link
-              href={`/search?category=${encodeURIComponent(product.category)}`}
+              href={`/kategorien/${categorySlug}`}
               className="flex items-center gap-2 text-sm md:text-base font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
             >
               Alle in {product.category}

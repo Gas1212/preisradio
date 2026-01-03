@@ -191,9 +191,9 @@ export default function ProductDetailClient({
                   <Image
                     src={retailerInfo.logo}
                     alt={retailerInfo.name}
-                    width={60}
-                    height={20}
-                    className="h-4 w-auto object-contain brightness-0 invert"
+                    width={70}
+                    height={26}
+                    className="h-4 md:h-5 w-auto object-contain brightness-0 invert"
                   />
                 )}
                 <span>{retailerInfo.name}</span>
@@ -419,9 +419,9 @@ export default function ProductDetailClient({
                 <Image
                   src={retailerInfo.logo}
                   alt={retailerInfo.name}
-                  width={60}
-                  height={20}
-                  className="h-4 w-auto object-contain"
+                  width={70}
+                  height={26}
+                  className="h-5 w-auto object-contain"
                 />
               )}
               Alle {retailerInfo.name} Angebote

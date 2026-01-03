@@ -81,8 +81,8 @@ export default function QuickViewModal({ product, isOpen, onClose }: QuickViewMo
                 <Image
                   src={retailerInfo.logo}
                   alt={retailerInfo.name}
-                  width={100}
-                  height={32}
+                  width={120}
+                  height={45}
                   className="h-full w-auto object-contain"
                 />
               ) : (

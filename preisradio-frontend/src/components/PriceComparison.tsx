@@ -98,9 +98,9 @@ export default function PriceComparison({ currentProduct }: PriceComparisonProps
                       <Image
                         src={retailerInfo.logo}
                         alt={retailerInfo.name}
-                        width={50}
-                        height={16}
-                        className="h-3 w-auto object-contain brightness-0 invert"
+                        width={60}
+                        height={24}
+                        className="h-4 w-auto object-contain brightness-0 invert"
                       />
                     )}
                     <span className="hidden sm:inline">{retailerInfo.name}</span>

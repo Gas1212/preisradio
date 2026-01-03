@@ -55,8 +55,8 @@ export default function ProductCard({ product, isBestPrice }: ProductCardProps) 
             <Image
               src={retailerInfo.logo}
               alt={retailerInfo.name}
-              width={80}
-              height={32}
+              width={100}
+              height={40}
               className="h-full w-auto object-contain"
             />
           ) : (

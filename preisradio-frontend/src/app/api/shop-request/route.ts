@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.preisradio.de';
+
 export async function POST(request: Request) {
   try {
     const { shopName, website, email } = await request.json();
@@ -11,41 +13,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Send email using Resend or similar service
-    // For now, we'll use a simple mailto approach via external service
-    const emailBody = `
-Neue Händler-Anfrage auf Preisradio
+    // Envoyer au backend Django qui a la config email
+    const response = await fetch(`${API_URL}/api/contact/shop-request/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shopName, website, email }),
+    });
 
-Shop-Name: ${shopName}
-Website: ${website}
-E-Mail: ${email}
-
----
-Gesendet von preisradio.de/haendler
-    `.trim();
-
-    // Option 1: Using Resend (if configured)
-    if (process.env.RESEND_API_KEY) {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Preisradio <noreply@preisradio.de>',
-          to: ['contact@preisradio.de'],
-          subject: `Neue Händler-Anfrage: ${shopName}`,
-          text: emailBody,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to send email');
-      }
-    } else {
-      // Fallback: Log the request (you can integrate with other email services)
-      console.log('Shop Request:', { shopName, website, email });
+    if (!response.ok) {
+      throw new Error('Failed to send request');
     }
 
     return NextResponse.json({ success: true });

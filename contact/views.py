@@ -70,3 +70,50 @@ Das PrixRadio Team
             {'error': 'Failed to send email'},
             status=500
         )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def shop_request(request):
+    """Handle shop request form submissions"""
+    try:
+        data = request.data
+
+        shop_name = data.get('shopName')
+        website = data.get('website')
+        email = data.get('email')
+
+        if not shop_name or not website or not email:
+            return Response(
+                {'error': 'All fields are required'},
+                status=400
+            )
+
+        subject_line = f"Neue Händler-Anfrage: {shop_name}"
+        message = f"""
+Neue Händler-Anfrage auf Preisradio
+
+Shop-Name: {shop_name}
+Website: {website}
+E-Mail: {email}
+
+---
+Gesendet von preisradio.de/haendler
+        """
+
+        send_mail(
+            subject_line,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [settings.CONTACT_EMAIL],
+            fail_silently=False,
+        )
+
+        return Response({'success': 'Request sent successfully'}, status=200)
+
+    except Exception as e:
+        logger.error(f'Error sending shop request email: {str(e)}')
+        return Response(
+            {'error': 'Failed to send request'},
+            status=500
+        )

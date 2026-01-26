@@ -6,8 +6,8 @@ import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/schema';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
-// Revalidate every hour (3600 seconds) - ISR
-export const revalidate = 3600;
+// Revalidate every 48 hours (172800 seconds) - ISR
+export const revalidate = 172800;
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const resolvedParams = await params;

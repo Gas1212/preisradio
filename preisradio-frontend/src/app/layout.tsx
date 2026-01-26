@@ -104,6 +104,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </>
         )}
 
+        {/* Google AdSense */}
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8451378376537532"
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         {/* JSON-LD Structured Data - WebSite schema only */}
         {/* Organization schema is on homepage for better SEO */}
         <script

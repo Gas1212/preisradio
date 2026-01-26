@@ -1,13 +1,18 @@
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import ProductDetailClient from './ProductDetailClient';
 import api from '@/lib/api';
 import { generateProductSchema, generateBreadcrumbSchema } from '@/lib/schema';
 
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://preisradio.de';
 
+// Revalidate every hour (3600 seconds) - ISR
+export const revalidate = 3600;
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+
   try {
-    const resolvedParams = await params;
     const product = await api.getProduct(resolvedParams.id);
 
     // Get brand name for keywords
@@ -69,7 +74,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
   let product = null;
   let productSchema = null;
   let breadcrumbSchema = null;
-  let error = null;
 
   try {
     product = await api.getProduct(resolvedParams.id);
@@ -77,7 +81,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     breadcrumbSchema = generateBreadcrumbSchema(product, baseUrl);
   } catch (err) {
     console.error('Error fetching product:', err);
-    error = 'Fehler beim Laden des Produkts';
+    // Product not found - redirect to homepage
+    redirect('/');
   }
 
   return (
@@ -103,7 +108,6 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
       <ProductDetailClient
         productId={resolvedParams.id}
         initialProduct={product}
-        initialError={error}
       />
     </>
   );

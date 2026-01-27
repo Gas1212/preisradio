@@ -8,6 +8,7 @@ import { Product } from '@/lib/types';
 import api from '@/lib/api';
 import ProductSimilar from '@/components/ProductSimilar';
 import PriceComparison from '@/components/PriceComparison';
+import AdSenseDisplay from '@/components/AdSenseDisplay';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import { getRetailerInfo } from '@/lib/retailerUtils';
@@ -384,6 +385,11 @@ export default function ProductDetailClient({
 
         {/* Price Comparison */}
         <PriceComparison currentProduct={product} />
+
+        {/* AdSense Display Ad */}
+        <div className="my-8">
+          <AdSenseDisplay adSlot="6054157785" />
+        </div>
 
         {/* Quick Links Section */}
         <div className="mb-8 rounded-2xl bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 p-6 dark:from-zinc-800 dark:via-zinc-800 dark:to-zinc-800 border border-blue-100 dark:border-zinc-700">

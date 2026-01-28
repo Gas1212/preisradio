@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AdSenseDisplay from '@/components/AdSenseDisplay';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -95,8 +96,13 @@ export default function Footer() {
           ))}
         </div>
 
+        {/* AdSense Display Ad - Before Footer */}
+        <div className="mt-12 mb-8">
+          <AdSenseDisplay adSlot="6054157785" />
+        </div>
+
         {/* Newsletter Section */}
-        <div className="mt-12 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6 dark:from-blue-950/20 dark:to-purple-950/20">
+        <div className="mt-8 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6 dark:from-blue-950/20 dark:to-purple-950/20">
           <div className="flex flex-col items-center text-center md:flex-row md:justify-between md:text-left">
             <div className="mb-4 md:mb-0">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
+import AdSenseInFeed from './AdSenseInFeed';
 import { Product } from '@/lib/types';
 
 interface ProductSectionProps {
@@ -94,13 +95,28 @@ export default function ProductSection({
             ref={scrollRef}
             className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory scroll-smooth"
           >
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex-none w-[260px] sm:w-[280px] md:w-[240px] lg:w-[260px] snap-start"
-              >
-                <ProductCard product={product} />
-              </div>
+            {products.map((product, index) => (
+              <>
+                <div
+                  key={product.id}
+                  className="flex-none w-[260px] sm:w-[280px] md:w-[240px] lg:w-[260px] snap-start"
+                >
+                  <ProductCard product={product} />
+                </div>
+                {/* Insert In-Feed ad after every 8th product */}
+                {(index + 1) % 8 === 0 && index < products.length - 1 && (
+                  <div
+                    key={`ad-${index}`}
+                    className="flex-none w-[260px] sm:w-[280px] md:w-[240px] lg:w-[260px] snap-start"
+                  >
+                    <AdSenseInFeed
+                      adSlot="6399181253"
+                      layoutKey="+2t+rs+1r-2b-1u"
+                      className="h-full"
+                    />
+                  </div>
+                )}
+              </>
             ))}
           </div>
 

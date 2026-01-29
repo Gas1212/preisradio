@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Product } from '@/lib/types';
 import api from '@/lib/api';
 import Navigation from '@/components/Navigation';

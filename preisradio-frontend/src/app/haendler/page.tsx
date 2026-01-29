@@ -7,12 +7,21 @@ import { Retailer } from '@/lib/types';
 import api from '@/lib/api';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
+import { getRetailerInfo } from '@/lib/retailerUtils';
 
 export default function HaendlerPage() {
   const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ shopName: '', website: '', email: '' });
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+
+  // Fallback retailers avec logos locaux
+  const defaultRetailers = [
+    { id: 'saturn', name: 'Saturn', website: 'https://www.saturn.de', count: 0 },
+    { id: 'mediamarkt', name: 'MediaMarkt', website: 'https://www.mediamarkt.de', count: 0 },
+    { id: 'otto', name: 'Otto', website: 'https://www.otto.de', count: 0 },
+    { id: 'kaufland', name: 'Kaufland', website: 'https://www.kaufland.de', count: 0 },
+  ];
 
   useEffect(() => {
     loadData();
@@ -21,9 +30,16 @@ export default function HaendlerPage() {
   const loadData = async () => {
     try {
       const retailersResponse = await api.getRetailers();
-      setRetailers(retailersResponse.results);
+      // Si l'API retourne des données, les utiliser, sinon fallback
+      if (retailersResponse.results && retailersResponse.results.length > 0) {
+        setRetailers(retailersResponse.results);
+      } else {
+        setRetailers(defaultRetailers as any);
+      }
     } catch (err) {
       console.error('Error loading data:', err);
+      // En cas d'erreur, utiliser les retailers par défaut
+      setRetailers(defaultRetailers as any);
     } finally {
       setLoading(false);
     }
@@ -88,6 +104,50 @@ export default function HaendlerPage() {
           </div>
         </div>
 
+        {/* Stats */}
+        <div className="mb-12 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="rounded-xl bg-white p-4 sm:p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800">
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {retailers.length}
+              </p>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                Händler
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white p-4 sm:p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800">
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+                {retailers.reduce((sum, r) => sum + (r.count || 0), 0)}+
+              </p>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                Produkte
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white p-4 sm:p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800">
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
+                100%
+              </p>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                Kostenlos
+              </p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-white p-4 sm:p-6 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800">
+            <div className="text-center">
+              <p className="text-2xl sm:text-3xl font-bold text-orange-600 dark:text-orange-400">
+                24/7
+              </p>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                Updates
+              </p>
+            </div>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
@@ -121,27 +181,33 @@ export default function HaendlerPage() {
           </div>
         ) : (
           <>
-            {/* Retailers Grid */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {retailers.map((retailer) => (
+            {/* Retailers Grid - Improved with brand colors */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {retailers.map((retailer) => {
+                const retailerInfo = getRetailerInfo(retailer.id);
+
+                return (
                   <div
                     key={retailer.id}
-                    className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:scale-105 hover:shadow-2xl dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800"
+                    className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transition-all hover:-translate-y-2 hover:shadow-2xl dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 hover:border-blue-300 dark:hover:border-blue-600"
                   >
-                    {/* Logo/Name */}
-                    <div className="mb-6">
-                      <div className="relative h-32 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-zinc-800 dark:to-zinc-900 shadow-inner overflow-hidden">
-                        {retailer.logo ? (
+                    {/* Brand Color Accent */}
+                    <div className={`absolute top-0 left-0 right-0 h-1 ${retailerInfo.color || 'bg-gray-400'}`}></div>
+
+                    {/* Logo Section with Brand Background */}
+                    <div className="mb-4">
+                      <div className="relative h-32 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 p-4 flex items-center justify-center overflow-hidden">
+                        {retailerInfo.logo ? (
                           <Image
-                            src={retailer.logo}
+                            src={retailerInfo.logo}
                             alt={retailer.name}
-                            fill
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="object-contain p-4 group-hover:scale-110 transition-transform duration-300"
-                            unoptimized={retailer.logo.startsWith('http')}
+                            width={200}
+                            height={100}
+                            className="object-contain max-h-24 group-hover:scale-110 transition-transform duration-300"
+                            unoptimized
                           />
                         ) : (
-                          <span className="flex items-center justify-center h-full text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+                          <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
                             {retailer.name}
                           </span>
                         )}
@@ -149,25 +215,37 @@ export default function HaendlerPage() {
                     </div>
 
                     {/* Retailer Name */}
-                    <h3 className="mb-6 text-center text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    <h3 className="mb-2 text-center text-xl font-bold text-gray-900 dark:text-white">
                       {retailer.name}
                     </h3>
 
+                    {/* Product Count */}
+                    {retailer.count && retailer.count > 0 && (
+                      <div className="mb-4 text-center">
+                        <p className={`text-sm font-semibold ${retailerInfo.textColor || 'text-gray-600'}`}>
+                          {retailer.count.toLocaleString('de-DE')} Produkte
+                        </p>
+                      </div>
+                    )}
+
                     {/* Actions */}
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
                       <Link
                         href={`/search?retailer=${retailer.id}`}
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700"
+                        className={`flex items-center justify-center gap-2 rounded-lg ${retailerInfo.color || 'bg-blue-600'} px-4 py-2.5 text-sm font-semibold text-white transition-all hover:opacity-90 shadow-md hover:shadow-lg`}
                       >
-                        Produkte
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        Produkte ansehen
                       </Link>
                       <a
                         href={retailer.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-gray-100 dark:bg-zinc-800 px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-200 dark:hover:bg-zinc-700"
                       >
-                        Website
+                        Website besuchen
                         <svg
                           className="h-4 w-4"
                           fill="none"
@@ -184,7 +262,53 @@ export default function HaendlerPage() {
                       </a>
                     </div>
                   </div>
-                ))}
+                );
+              })}
+            </div>
+
+            {/* Why Choose Us Section */}
+            <div className="mt-12 md:mt-16 grid gap-6 md:grid-cols-3">
+              <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                  <svg className="h-8 w-8 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                  Blitzschnell
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Preise werden in Echtzeit aktualisiert und verglichen
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                  <svg className="h-8 w-8 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                  Vertrauenswürdig
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Nur seriöse und etablierte Online-Händler
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 sm:p-8 shadow-lg dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+                  <svg className="h-8 w-8 text-purple-600 dark:text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="mb-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                  Geld sparen
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Finden Sie immer den besten Preis und sparen Sie bares Geld
+                </p>
+              </div>
             </div>
 
             {/* Trust Section */}

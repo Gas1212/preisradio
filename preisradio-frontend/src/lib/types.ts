@@ -6,6 +6,7 @@ export interface Retailer {
   slug: string;
   website: string;
   logo?: string;
+  count?: number;
 }
 
 export interface Price {

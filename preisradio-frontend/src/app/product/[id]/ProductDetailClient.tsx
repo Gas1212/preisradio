@@ -224,9 +224,30 @@ export default function ProductDetailClient({
 
             {/* Description */}
             {product.description && (
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
-                {product.description}
-              </p>
+              <div className="text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed space-y-3">
+                {(() => {
+                  // Split description into paragraphs (by double newline, single newline, or <br> tags)
+                  const paragraphs = product.description
+                    .split(/\n\n|\n|<br\s*\/?>/gi)
+                    .map(p => p.trim())
+                    .filter(p => p.length > 0);
+
+                  // Take only first 4 paragraphs
+                  const limitedParagraphs = paragraphs.slice(0, 4);
+                  const isTruncated = paragraphs.length > 4;
+
+                  return (
+                    <>
+                      {limitedParagraphs.map((paragraph, index) => (
+                        <p key={index}>{paragraph}</p>
+                      ))}
+                      {isTruncated && (
+                        <p className="text-gray-500 dark:text-gray-500 italic">...</p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             )}
 
             {/* GTIN/EAN */}

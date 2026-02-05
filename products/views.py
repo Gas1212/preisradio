@@ -10,6 +10,7 @@ from django.core.cache import cache
 from django.conf import settings
 from mongoengine.queryset.visitor import Q
 from bson import ObjectId
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 from .models import SaturnProduct, MediaMarktProduct, OttoProduct, KauflandProduct
 from .serializers import (
@@ -421,32 +422,45 @@ class ProductViewSet(viewsets.ViewSet):
             page_products = [(p, source) for p, source, _ in page_products]
 
         else:
-            # For 'all' retailers - load from all and merge with relevance scoring
-            saturn_count = saturn_query.count() if saturn_query else 0
-            mediamarkt_count = mediamarkt_query.count() if mediamarkt_query else 0
-            otto_count = otto_query.count() if otto_query else 0
-
-            try:
-                kaufland_count = kaufland_query.count() if kaufland_query else 0
-            except Exception as e:
-                print(f"Warning: Could not count Kaufland products: {e}")
-                kaufland_count = 0
-
-            total_count = saturn_count + mediamarkt_count + otto_count + kaufland_count
-
-            # Load enough results to ensure good page results after sorting
-            # Cap at 10000 to respect MAX_PAGE_SIZE setting
+            # For 'all' retailers - load from all in PARALLEL and merge with relevance scoring
             load_size = min(max(page_size * 5, 250), 10000)
 
-            saturn_results = list(saturn_query.order_by('-scraped_at').limit(load_size)) if saturn_query else []
-            mediamarkt_results = list(mediamarkt_query.order_by('-scraped_at').limit(load_size)) if mediamarkt_query else []
-            otto_results = list(otto_query.order_by('-scraped_at').limit(load_size)) if otto_query else []
+            # Helper function to load products from a query
+            def load_products(query, retailer_name):
+                try:
+                    if query:
+                        results = list(query.order_by('-scraped_at').limit(load_size))
+                        count = query.count()
+                        return retailer_name, results, count
+                    return retailer_name, [], 0
+                except Exception as e:
+                    print(f"Warning: Could not load {retailer_name} products: {e}")
+                    return retailer_name, [], 0
 
-            try:
-                kaufland_results = list(kaufland_query.order_by('-scraped_at').limit(load_size)) if kaufland_query else []
-            except Exception as e:
-                print(f"Warning: Could not load Kaufland products: {e}")
-                kaufland_results = []
+            # Execute all queries in parallel using ThreadPoolExecutor
+            saturn_results, mediamarkt_results, otto_results, kaufland_results = [], [], [], []
+            saturn_count, mediamarkt_count, otto_count, kaufland_count = 0, 0, 0, 0
+
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                futures = [
+                    executor.submit(load_products, saturn_query, 'saturn'),
+                    executor.submit(load_products, mediamarkt_query, 'mediamarkt'),
+                    executor.submit(load_products, otto_query, 'otto'),
+                    executor.submit(load_products, kaufland_query, 'kaufland'),
+                ]
+
+                for future in as_completed(futures):
+                    retailer_name, results, count = future.result()
+                    if retailer_name == 'saturn':
+                        saturn_results, saturn_count = results, count
+                    elif retailer_name == 'mediamarkt':
+                        mediamarkt_results, mediamarkt_count = results, count
+                    elif retailer_name == 'otto':
+                        otto_results, otto_count = results, count
+                    elif retailer_name == 'kaufland':
+                        kaufland_results, kaufland_count = results, count
+
+            total_count = saturn_count + mediamarkt_count + otto_count + kaufland_count
 
             # Combine products with relevance scores
             products = [(p, 'saturn', self._calculate_search_relevance(p, search)) for p in saturn_results]

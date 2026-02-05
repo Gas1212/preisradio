@@ -1,6 +1,10 @@
 // Service Worker for Preisradio PWA
-const CACHE_NAME = 'preisradio-v1';
-const RUNTIME_CACHE = 'preisradio-runtime';
+const CACHE_NAME = 'preisradio-v2';
+const RUNTIME_CACHE = 'preisradio-runtime-v2';
+const API_CACHE = 'preisradio-api-v2';
+
+// API domain for cross-origin caching
+const API_ORIGIN = 'https://preisradio.de';
 
 // Assets to cache on install
 const PRECACHE_URLS = [
@@ -25,14 +29,13 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  const currentCaches = [CACHE_NAME, RUNTIME_CACHE, API_CACHE];
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((cacheName) => {
-              return cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE;
-            })
+            .filter((cacheName) => !currentCaches.includes(cacheName))
             .map((cacheName) => {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
@@ -48,17 +51,37 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
-
   // Skip POST requests and non-GET methods
   if (request.method !== 'GET') {
     return;
   }
 
-  // API requests - network first
+  // Handle cross-origin API requests (preisradio.de)
+  if (url.origin === API_ORIGIN && url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(API_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(request);
+        })
+    );
+    return;
+  }
+
+  // Skip other cross-origin requests
+  if (url.origin !== location.origin) {
+    return;
+  }
+
+  // Local API requests - network first
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request)

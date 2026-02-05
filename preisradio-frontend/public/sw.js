@@ -1,10 +1,10 @@
 // Service Worker for Preisradio PWA
-const CACHE_NAME = 'preisradio-v2';
-const RUNTIME_CACHE = 'preisradio-runtime-v2';
-const API_CACHE = 'preisradio-api-v2';
+const CACHE_NAME = 'preisradio-v3';
+const RUNTIME_CACHE = 'preisradio-runtime-v3';
+const API_CACHE = 'preisradio-api-v3';
 
 // API domain for cross-origin caching
-const API_ORIGIN = 'https://preisradio.de';
+const API_ORIGIN = 'https://api.preisradio.de';
 
 // Assets to cache on install
 const PRECACHE_URLS = [

@@ -14,17 +14,33 @@ export default function PWAInstall() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      return;
-    }
+    // Check if already installed (works for Android/Desktop)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
     // Check if iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
-    // Listen for the beforeinstallprompt event
+    // Check if installed on iOS (navigator.standalone)
+    const isIOSInstalled = iOS && (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    if (isStandalone || isIOSInstalled) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // For iOS: show prompt after delay (no beforeinstallprompt event on iOS)
+    if (iOS) {
+      setTimeout(() => {
+        const hasSeenPrompt = localStorage.getItem('pwa-install-dismissed');
+        if (!hasSeenPrompt) {
+          setShowInstallPrompt(true);
+        }
+      }, 3000);
+      return;
+    }
+
+    // Listen for the beforeinstallprompt event (Android/Desktop)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -111,9 +127,10 @@ export default function PWAInstall() {
                 <li className="flex items-center gap-2">
                   <span className="font-bold">1.</span>
                   Tippen Sie auf
-                  <svg className="h-5 w-5 inline" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z"/>
+                  <svg className="h-5 w-5 inline text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
+                  (Teilen)
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="font-bold">2.</span>

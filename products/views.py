@@ -104,52 +104,146 @@ class RetailerViewSet(viewsets.ViewSet):
 class ProductViewSet(viewsets.ViewSet):
     """ViewSet for products from all retailers (Saturn, MediaMarkt, Otto, and Kaufland)"""
 
+    def _normalize_text(self, text):
+        """Normalize text for better search matching (remove accents, lowercase)"""
+        if not text:
+            return ""
+
+        import unicodedata
+        # Remove accents
+        text = ''.join(
+            c for c in unicodedata.normalize('NFD', text)
+            if unicodedata.category(c) != 'Mn'
+        )
+        return text.lower().strip()
+
+    def _tokenize_search(self, search_term):
+        """Split search term into individual tokens/words"""
+        if not search_term:
+            return []
+
+        # Split by spaces and remove empty strings
+        tokens = [t.strip() for t in search_term.split() if t.strip()]
+        return tokens
+
     def _calculate_search_relevance(self, product, search_term):
         """Calculate relevance score for a product based on search term match.
 
+        Enhanced scoring with:
+        - Multi-word tokenization
+        - Accent/case normalization
+        - Position-based scoring
+        - Freshness boosting
+        - Image availability boosting
+
         Scoring:
-        - Title exact match: 100
-        - Title starts with: 80
-        - Title contains: 60
-        - Description exact match: 40
-        - Description starts with: 30
-        - Description contains: 20
+        - Title exact match (all tokens): 100
+        - Title starts with (all tokens): 80
+        - Title contains all tokens: 60
+        - Title contains partial tokens: 20-40 (scaled by match ratio)
+        - GTIN exact match: 90
         - Brand match: 50
-        - GTIN match: 70
+        - Description match: 15-30 (scaled)
+        - Has image: +5
+        - Recent product (<7 days): +10
+        - Recent product (<30 days): +5
         """
         if not search_term:
             return 0
 
-        search_lower = search_term.lower()
+        # Normalize and tokenize search term
+        search_normalized = self._normalize_text(search_term)
+        search_tokens = self._tokenize_search(search_normalized)
+
+        if not search_tokens:
+            return 0
+
         score = 0
 
-        # Check title (highest priority)
-        if product.title:
-            title_lower = product.title.lower()
-            if title_lower == search_lower:
-                score = max(score, 100)
-            elif title_lower.startswith(search_lower):
-                score = max(score, 80)
-            elif search_lower in title_lower:
-                score = max(score, 60)
+        # Normalize product fields
+        title_normalized = self._normalize_text(product.title) if product.title else ""
+        brand_normalized = self._normalize_text(product.brand) if product.brand else ""
+        desc_normalized = self._normalize_text(product.description) if product.description else ""
+        gtin_normalized = self._normalize_text(str(product.gtin)) if product.gtin else ""
 
-        # Check GTIN (exact match important for products)
-        if product.gtin and product.gtin.lower() == search_lower:
-            score = max(score, 70)
+        # Check GTIN (highest priority for exact product matching)
+        if gtin_normalized and gtin_normalized == search_normalized:
+            score = max(score, 90)
+
+        # Check title (very high priority)
+        if title_normalized:
+            # Exact match with all tokens
+            if title_normalized == search_normalized:
+                score = max(score, 100)
+            # Starts with search term
+            elif title_normalized.startswith(search_normalized):
+                score = max(score, 80)
+            else:
+                # Multi-token matching
+                tokens_found = sum(1 for token in search_tokens if token in title_normalized)
+                match_ratio = tokens_found / len(search_tokens)
+
+                if match_ratio == 1.0:
+                    # All tokens found in title
+                    score = max(score, 60)
+
+                    # Bonus if tokens appear in order
+                    tokens_in_order = all(
+                        title_normalized.find(search_tokens[i]) < title_normalized.find(search_tokens[i+1])
+                        for i in range(len(search_tokens)-1)
+                        if search_tokens[i] in title_normalized and search_tokens[i+1] in title_normalized
+                    ) if len(search_tokens) > 1 else False
+
+                    if tokens_in_order:
+                        score += 10
+
+                elif match_ratio > 0.5:
+                    # More than half tokens found
+                    score = max(score, int(40 * match_ratio))
+                elif match_ratio > 0:
+                    # Some tokens found
+                    score = max(score, int(20 * match_ratio))
 
         # Check brand (moderate priority)
-        if product.brand and search_lower in product.brand.lower():
-            score = max(score, 50)
+        if brand_normalized:
+            # Exact brand match
+            if brand_normalized == search_normalized:
+                score = max(score, 55)
+            # Brand contains search term
+            elif search_normalized in brand_normalized:
+                score = max(score, 50)
+            # Multi-token brand matching
+            else:
+                tokens_found = sum(1 for token in search_tokens if token in brand_normalized)
+                if tokens_found > 0:
+                    score = max(score, int(45 * tokens_found / len(search_tokens)))
 
-        # Check description (lowest priority)
-        if product.description:
-            desc_lower = product.description.lower()
-            if desc_lower == search_lower:
-                score = max(score, 40)
-            elif desc_lower.startswith(search_lower):
+        # Check description (lower priority)
+        if desc_normalized:
+            # Count token matches in description
+            tokens_found = sum(1 for token in search_tokens if token in desc_normalized)
+            match_ratio = tokens_found / len(search_tokens)
+
+            if match_ratio == 1.0:
                 score = max(score, 30)
-            elif search_lower in desc_lower:
-                score = max(score, 20)
+            elif match_ratio > 0.5:
+                score = max(score, int(25 * match_ratio))
+            elif match_ratio > 0:
+                score = max(score, int(15 * match_ratio))
+
+        # Freshness boost (favor recent products)
+        if product.scraped_at:
+            from datetime import datetime, timezone
+            age_days = (datetime.now(timezone.utc) - product.scraped_at).days
+
+            if age_days < 7:
+                score += 10  # Very recent
+            elif age_days < 30:
+                score += 5   # Recent
+
+        # Image availability boost (better UX)
+        if product.image:
+            score += 5
 
         return score
 

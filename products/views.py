@@ -2,16 +2,15 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
-from django.views.decorators.cache import cache_page
-from django.views.decorators.http import condition
-from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from django.core.cache import cache
 from django.conf import settings
 from mongoengine.queryset.visitor import Q
-from bson import ObjectId
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
+import logging
+
+logger = logging.getLogger(__name__)
 from .models import SaturnProduct, MediaMarktProduct, OttoProduct, KauflandProduct
 from .serializers import (
     SaturnProductSerializer,
@@ -69,7 +68,7 @@ class RetailerViewSet(viewsets.ViewSet):
         try:
             return model.objects.count()
         except Exception as e:
-            print(f"Warning: Could not count {model.__name__}: {e}")
+            logger.warning(f"Could not count {model.__name__}: {e}")
             return 0
 
     def retrieve(self, request, pk=None):
@@ -434,7 +433,7 @@ class ProductViewSet(viewsets.ViewSet):
                         return retailer_name, results, count
                     return retailer_name, [], 0
                 except Exception as e:
-                    print(f"Warning: Could not load {retailer_name} products: {e}")
+                    logger.warning(f"Could not load {retailer_name} products: {e}")
                     return retailer_name, [], 0
 
             # Execute all queries in parallel using ThreadPoolExecutor
@@ -511,21 +510,17 @@ class ProductViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk=None):
         """Retrieve a product by ID"""
-        # Try Kaufland first for debugging
+        # Try Kaufland
         try:
             product = KauflandProduct.objects.get(id=pk)
             serializer = KauflandProductSerializer(product)
             data = serializer.data
             data['retailer'] = 'kaufland'
             return Response(data)
-        except KauflandProduct.DoesNotExist as e:
-            print(f"Kaufland DoesNotExist for ID {pk}")
+        except KauflandProduct.DoesNotExist:
             pass
         except Exception as e:
-            # Log Kaufland-specific errors for debugging
-            print(f"Kaufland product retrieve error for ID {pk}: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Kaufland product retrieve error for ID {pk}: {type(e).__name__}: {e}")
             pass
 
         # Try Saturn
@@ -580,7 +575,7 @@ class ProductViewSet(viewsets.ViewSet):
         try:
             kaufland_categories = list(KauflandProduct.objects.distinct('category'))
         except Exception as e:
-            print(f"Warning: Could not get Kaufland categories: {e}")
+            logger.warning(f"Could not get Kaufland categories: {e}")
             kaufland_categories = []
 
         # Combine all categories
@@ -915,7 +910,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         except Exception as e:
             import traceback
-            print(f"Sitemap error: {traceback.format_exc()}")
+            logger.error(f"Sitemap error: {traceback.format_exc()}")
             return Response(
                 {'error': str(e), 'detail': 'Failed to fetch sitemap data'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1016,7 +1011,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         except Exception as e:
             import traceback
-            print(f"Google Merchant Feed error: {traceback.format_exc()}")
+            logger.error(f"Google Merchant Feed error: {traceback.format_exc()}")
             return HttpResponse(
                 f'<?xml version="1.0"?><error>{str(e)}</error>',
                 content_type='application/xml',
@@ -1157,7 +1152,7 @@ class ProductViewSet(viewsets.ViewSet):
 
         except Exception as e:
             import traceback
-            print(f"Google Merchant sync error: {traceback.format_exc()}")
+            logger.error(f"Google Merchant sync error: {traceback.format_exc()}")
             return Response(
                 {
                     'error': 'Failed to sync products to Google Merchant Center',

@@ -34,79 +34,6 @@ function SearchContent() {
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
 
-  // Load categories and brands once on mount
-  useEffect(() => {
-    loadCategoriesAndBrands();
-  }, [loadCategoriesAndBrands]);
-
-  // Synchronize state with URL params
-  useEffect(() => {
-    setCurrentPage(1);
-    loadProducts(1);
-  }, [query, categoryParam, brandParam, retailerParam, minPriceParam, maxPriceParam, discountParam, sortParam, loadProducts]);
-
-  // Update document title, canonical URL and JSON-LD
-  useEffect(() => {
-    if (query) {
-      document.title = `Suchergebnisse für "${query}" | Preisradio`;
-    } else {
-      document.title = 'Suche | Preisradio';
-    }
-
-    // Update canonical URL
-    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-    if (!canonical) {
-      canonical = document.createElement('link');
-      canonical.rel = 'canonical';
-      document.head.appendChild(canonical);
-    }
-    canonical.href = `${baseUrl}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`;
-
-    // Add JSON-LD for search results
-    let script = document.querySelector('#search-jsonld') as HTMLScriptElement;
-    if (!script) {
-      script = document.createElement('script');
-      script.id = 'search-jsonld';
-      script.type = 'application/ld+json';
-      document.head.appendChild(script);
-    }
-
-    const jsonLd = {
-      '@context': 'https://schema.org',
-      '@type': 'SearchResultsPage',
-      name: query ? `Suchergebnisse für ${query}` : 'Produktsuche',
-      url: `${baseUrl}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,
-      mainEntity: {
-        '@type': 'ItemList',
-        numberOfItems: products.length,
-        itemListElement: products.slice(0, 10).map((product, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          item: {
-            '@type': 'Product',
-            name: product.title,
-            url: `${baseUrl}/product/${product.id}`,
-            image: product.image,
-            offers: {
-              '@type': 'Offer',
-              price: product.price,
-              priceCurrency: product.currency
-            }
-          }
-        }))
-      }
-    };
-
-    script.textContent = JSON.stringify(jsonLd);
-
-    return () => {
-      const scriptEl = document.querySelector('#search-jsonld');
-      if (scriptEl) {
-        scriptEl.remove();
-      }
-    };
-  }, [query, products]);
-
   const loadCategoriesAndBrands = useCallback(async () => {
     try {
       const [categoriesRes, brandsRes] = await Promise.all([
@@ -169,6 +96,79 @@ function SearchContent() {
       setLoading(false);
     }
   }, [query, categoryParam, brandParam, retailerParam, minPriceParam, maxPriceParam, sortParam, discountParam, pageSize]);
+
+  // Load categories and brands once on mount
+  useEffect(() => {
+    loadCategoriesAndBrands();
+  }, [loadCategoriesAndBrands]);
+
+  // Synchronize state with URL params
+  useEffect(() => {
+    setCurrentPage(1);
+    loadProducts(1);
+  }, [loadProducts]);
+
+  // Update document title, canonical URL and JSON-LD
+  useEffect(() => {
+    if (query) {
+      document.title = `Suchergebnisse für "${query}" | Preisradio`;
+    } else {
+      document.title = 'Suche | Preisradio';
+    }
+
+    // Update canonical URL
+    let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.href = `${baseUrl}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+
+    // Add JSON-LD for search results
+    let script = document.querySelector('#search-jsonld') as HTMLScriptElement;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = 'search-jsonld';
+      script.type = 'application/ld+json';
+      document.head.appendChild(script);
+    }
+
+    const jsonLd = {
+      '@context': 'https://schema.org',
+      '@type': 'SearchResultsPage',
+      name: query ? `Suchergebnisse für ${query}` : 'Produktsuche',
+      url: `${baseUrl}/search${query ? `?q=${encodeURIComponent(query)}` : ''}`,
+      mainEntity: {
+        '@type': 'ItemList',
+        numberOfItems: products.length,
+        itemListElement: products.slice(0, 10).map((product, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          item: {
+            '@type': 'Product',
+            name: product.title,
+            url: `${baseUrl}/product/${product.id}`,
+            image: product.image,
+            offers: {
+              '@type': 'Offer',
+              price: product.price,
+              priceCurrency: product.currency
+            }
+          }
+        }))
+      }
+    };
+
+    script.textContent = JSON.stringify(jsonLd);
+
+    return () => {
+      const scriptEl = document.querySelector('#search-jsonld');
+      if (scriptEl) {
+        scriptEl.remove();
+      }
+    };
+  }, [query, products]);
 
   const updateURL = (params: Record<string, string>) => {
     const newParams = new URLSearchParams(searchParams.toString());

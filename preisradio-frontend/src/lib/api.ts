@@ -54,6 +54,9 @@ class ApiClient {
     page?: number;
     page_size?: number;
     retailer?: string;
+    min_price?: string | number;
+    max_price?: string | number;
+    sort?: string;
   }): Promise<ApiResponse<Product>> {
     const queryParams = new URLSearchParams();
 
@@ -63,6 +66,9 @@ class ApiClient {
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.page_size) queryParams.append('page_size', params.page_size.toString());
     if (params?.retailer) queryParams.append('retailer', params.retailer);
+    if (params?.min_price) queryParams.append('min_price', params.min_price.toString());
+    if (params?.max_price) queryParams.append('max_price', params.max_price.toString());
+    if (params?.sort) queryParams.append('sort', params.sort);
 
     const query = queryParams.toString();
     const endpoint = query ? `/products/?${query}` : '/products/';
@@ -78,6 +84,9 @@ class ApiClient {
     retailer?: string;
     page?: number;
     page_size?: number;
+    min_price?: string | number;
+    max_price?: string | number;
+    sort?: string;
   }): Promise<ApiResponse<Product>> {
     // Le backend gère maintenant le mélange des retailers et le cache
     // Un seul appel API au lieu de 4
@@ -88,6 +97,9 @@ class ApiClient {
       retailer: params?.retailer, // Si undefined, le backend charge tous les retailers
       page: params?.page || 1,
       page_size: params?.page_size || 20,
+      min_price: params?.min_price,
+      max_price: params?.max_price,
+      sort: params?.sort,
     });
   }
 

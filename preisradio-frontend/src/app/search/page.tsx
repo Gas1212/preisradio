@@ -30,6 +30,13 @@ function SearchContent() {
   const [totalCount, setTotalCount] = useState(0);
   const [pageSize] = useState(20);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+
+  // Load categories and brands once on mount
+  useEffect(() => {
+    loadCategoriesAndBrands();
+  }, []);
 
   // Synchronize state with URL params
   useEffect(() => {
@@ -99,31 +106,45 @@ function SearchContent() {
     };
   }, [query, products]);
 
+  const loadCategoriesAndBrands = async () => {
+    try {
+      const [categoriesRes, brandsRes] = await Promise.all([
+        api.getCategories({ page_size: 200 }),
+        api.getBrands({ page_size: 200 })
+      ]);
+
+      setCategories(categoriesRes.results || []);
+      setBrands(brandsRes.results || []);
+    } catch (err) {
+      console.error('Error loading categories and brands:', err);
+    }
+  };
+
   const loadProducts = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
       setCurrentPage(page);
 
-      const response = await api.getProductsFromBothRetailers({
-        search: query || undefined,
-        category: categoryParam || undefined,
-        brand: brandParam || undefined,
-        retailer: retailerParam || undefined,
+      // Build API params - backend now handles filtering and sorting
+      const params: any = {
         page: page,
         page_size: pageSize,
-      });
+      };
+
+      if (query) params.search = query;
+      if (categoryParam) params.category = categoryParam;
+      if (brandParam) params.brand = brandParam;
+      if (retailerParam) params.retailer = retailerParam;
+      if (minPriceParam) params.min_price = minPriceParam;
+      if (maxPriceParam) params.max_price = maxPriceParam;
+      if (sortParam) params.sort = sortParam;
+
+      const response = await api.getProductsFromBothRetailers(params);
 
       let results = response?.results || [];
 
-      // Client-side filtering (will be moved to server later)
-      if (minPriceParam) {
-        results = results.filter(p => p.price >= parseFloat(minPriceParam));
-      }
-      if (maxPriceParam) {
-        results = results.filter(p => p.price <= parseFloat(maxPriceParam));
-      }
-
+      // Discount filter still needs to be client-side (backend doesn't support it yet)
       if (discountParam) {
         const minDiscount = parseFloat(discountParam);
         results = results.filter(p => {
@@ -133,22 +154,8 @@ function SearchContent() {
         });
       }
 
-      // Sorting
-      if (sortParam === 'price_asc') {
-        results.sort((a, b) => a.price - b.price);
-      } else if (sortParam === 'price_desc') {
-        results.sort((a, b) => b.price - a.price);
-      } else if (sortParam === 'newest') {
-        results.sort((a, b) => {
-          const dateA = a.scraped_at ? new Date(a.scraped_at).getTime() : 0;
-          const dateB = b.scraped_at ? new Date(b.scraped_at).getTime() : 0;
-          return dateB - dateA;
-        });
-      }
-
       setProducts(results);
-      // Fix: Use actual filtered results count instead of API count
-      setTotalCount(results.length);
+      setTotalCount(response?.count || results.length);
     } catch (err) {
       setError('Fehler beim Laden der Suchergebnisse');
       console.error('Error loading search results:', err);
@@ -178,12 +185,6 @@ function SearchContent() {
   const handleResetFilters = () => {
     router.push(`/search${query ? `?q=${encodeURIComponent(query)}` : ''}`, { scroll: false });
   };
-
-  // Extraire les categories uniques
-  const categories = Array.from(new Set(products.map(p => p.category))).sort();
-
-  // Extraire les marques uniques
-  const brands = Array.from(new Set(products.map(p => p.brand).filter(Boolean))).sort();
 
   // Count active filters
   const activeFiltersCount = [categoryParam, brandParam, retailerParam, minPriceParam, maxPriceParam, discountParam].filter(Boolean).length;

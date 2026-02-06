@@ -45,13 +45,9 @@ export default function HomeContent() {
       // Load top categories first
       const categories = await loadTopCategories();
 
-      // Load products from Saturn, MediaMarkt and Otto for top deals (they have discounts)
-      const [saturnRes, mediamarktRes, ottoRes] = await Promise.all([
-        api.getProducts({ retailer: 'saturn', page_size: 100 }),
-        api.getProducts({ retailer: 'mediamarkt', page_size: 100 }),
-        api.getProducts({ retailer: 'otto', page_size: 100 }),
-      ]);
-      const allProductsWithDeals = [...saturnRes.results, ...mediamarktRes.results, ...ottoRes.results];
+      // Load products from all retailers for top deals (single API call)
+      const dealsRes = await api.getProductsFromBothRetailers({ page_size: 100 });
+      const allProductsWithDeals = dealsRes.results;
 
       // Filter products with discounts for top deals
       const productsWithDiscount = allProductsWithDeals.filter(p => {
@@ -69,25 +65,23 @@ export default function HomeContent() {
 
       setTopDeals(sortedByDiscount.slice(0, 20));
 
-      // Load products for each top category from all retailers mixed
-      const sections: CategorySection[] = [];
-
-      for (const category of categories) {
-        // Load products from all retailers for this category
+      // Load products for each top category from all retailers mixed (in parallel)
+      const sectionPromises = categories.map(async (category) => {
         const response = await api.getProductsFromBothRetailers({
           category: category,  // category is now a string, not an object
           page_size: 20
         });
 
-        sections.push({
+        return {
           category,
           saturnProducts: response.results.filter(p => p.retailer === 'saturn'),
           mediamarktProducts: response.results.filter(p => p.retailer === 'mediamarkt'),
           ottoProducts: response.results.filter(p => p.retailer === 'otto'),
           kauflandProducts: response.results.filter(p => p.retailer === 'kaufland')
-        });
-      }
+        };
+      });
 
+      const sections = await Promise.all(sectionPromises);
       setCategorySections(sections);
     } catch (err) {
       setError('Fehler beim Laden der Produkte');

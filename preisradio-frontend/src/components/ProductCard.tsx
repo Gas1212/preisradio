@@ -24,11 +24,11 @@ export default function ProductCard({ product, isBestPrice }: ProductCardProps) 
           {product.image ? (
             <Image
               src={product.image}
-              alt={product.title}
+              alt={product.title || 'Product'}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className="object-contain p-0.5 sm:p-2 transition-transform duration-300 group-hover:scale-105"
-              unoptimized={product.image.startsWith('http')}
+              unoptimized={product.image?.startsWith('http')}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-gray-400">
@@ -68,7 +68,7 @@ export default function ProductCard({ product, isBestPrice }: ProductCardProps) 
 
         {/* Nom du produit - optimized for mobile */}
         <h3 className="mb-1 sm:mb-2 line-clamp-2 text-[10px] sm:text-base font-semibold text-gray-900 dark:text-white min-h-[1.5rem] sm:min-h-[2.5rem]">
-          {product.title}
+          {product.title || 'Produkt'}
         </h3>
 
         {/* Prix - simplified for mobile */}
@@ -78,7 +78,7 @@ export default function ProductCard({ product, isBestPrice }: ProductCardProps) 
               <p className="text-sm sm:text-xl font-bold text-blue-600 dark:text-blue-400">
                 {currentPrice.toFixed(2)}
               </p>
-              <p className="text-[9px] sm:text-sm text-blue-600 dark:text-blue-400">{product.currency}</p>
+              <p className="text-[9px] sm:text-sm text-blue-600 dark:text-blue-400">{product.currency || '€'}</p>
             </div>
             {hasDiscount && oldPrice && (
               <p className="text-[8px] sm:text-xs text-gray-500 line-through dark:text-gray-400">

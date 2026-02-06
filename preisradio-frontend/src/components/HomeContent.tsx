@@ -115,6 +115,8 @@ export default function HomeContent() {
       'TV': '📺',
     };
 
+    if (!categoryName) return '📦';
+
     for (const [key, icon] of Object.entries(icons)) {
       if (categoryName.toLowerCase().includes(key.toLowerCase())) {
         return icon;
@@ -179,6 +181,9 @@ export default function HomeContent() {
 
       {/* Dynamic Category Sections */}
       {categorySections.map((section) => {
+        // Skip if category name is missing
+        if (!section.category?.name) return null;
+
         // Mix products from all retailers
         const allProducts = [
           ...section.saturnProducts,
@@ -194,7 +199,7 @@ export default function HomeContent() {
           <ProductSection
             key={section.category.name}
             title={section.category.name}
-            description={`${section.category.count} Produkte von Saturn, MediaMarkt, Otto & Kaufland`}
+            description={`${section.category.count || 0} Produkte von Saturn, MediaMarkt, Otto & Kaufland`}
             products={allProducts}
             viewAllLink={`/kategorien/${categorySlug}`}
             icon={icon}

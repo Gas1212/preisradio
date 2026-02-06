@@ -196,8 +196,8 @@ export default function HomeContent() {
 
       {/* Dynamic Category Sections */}
       {categorySections.map((section) => {
-        // Skip if category name is missing
-        if (!section.category?.name) return null;
+        // Skip if category or category name is missing
+        if (!section.category?.name || typeof section.category.name !== 'string') return null;
 
         // Mix products from all retailers
         const allProducts = [
@@ -207,9 +207,10 @@ export default function HomeContent() {
           ...section.kauflandProducts
         ];
 
-        const translatedName = simplifyGermanName(section.category.name);
-        const categorySlug = section.category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const icon = getCategoryIcon(section.category.name);
+        const categoryName = section.category.name;
+        const translatedName = simplifyGermanName(categoryName);
+        const categorySlug = categoryName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const icon = getCategoryIcon(categoryName);
 
         return (
           <ProductSection

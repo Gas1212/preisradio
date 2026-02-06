@@ -97,6 +97,16 @@ export default function HomeContent() {
     }
   };
 
+  const translateCategoryName = (categoryName: string): string => {
+    const translations: { [key: string]: string } = {
+      'PC Bureau Gaming': 'Gaming-PC',
+      'PC Portable': 'Laptop',
+      'Smartwatch': 'Smartwatch',
+    };
+
+    return translations[categoryName] || categoryName;
+  };
+
   const getCategoryIcon = (categoryName: string): string => {
     const icons: { [key: string]: string } = {
       'Laptops': '💻',
@@ -192,13 +202,14 @@ export default function HomeContent() {
           ...section.kauflandProducts
         ];
 
+        const translatedName = translateCategoryName(section.category.name);
         const categorySlug = section.category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const icon = getCategoryIcon(section.category.name);
 
         return (
           <ProductSection
             key={section.category.name}
-            title={section.category.name}
+            title={translatedName}
             description={`${section.category.count || 0} Produkte von Saturn, MediaMarkt, Otto & Kaufland`}
             products={allProducts}
             viewAllLink={`/kategorien/${categorySlug}`}

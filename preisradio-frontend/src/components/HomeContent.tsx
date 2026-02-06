@@ -97,11 +97,16 @@ export default function HomeContent() {
     }
   };
 
-  const translateCategoryName = (categoryName: string): string => {
+  const simplifyGermanName = (categoryName: string): string => {
+    // If the name contains " - ", keep only the German part (before the dash)
+    if (categoryName.includes(' - ')) {
+      return categoryName.split(' - ')[0].trim();
+    }
+
+    // Direct translations for French-only names
     const translations: { [key: string]: string } = {
       'PC Bureau Gaming': 'Gaming-PC',
       'PC Portable': 'Laptop',
-      'Smartwatch': 'Smartwatch',
     };
 
     return translations[categoryName] || categoryName;
@@ -202,7 +207,7 @@ export default function HomeContent() {
           ...section.kauflandProducts
         ];
 
-        const translatedName = translateCategoryName(section.category.name);
+        const translatedName = simplifyGermanName(section.category.name);
         const categorySlug = section.category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
         const icon = getCategoryIcon(section.category.name);
 

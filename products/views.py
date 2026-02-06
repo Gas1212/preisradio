@@ -509,83 +509,48 @@ class ProductViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'])
     def categories(self, request):
         """
-        Get all unique categories with product count, pagination and search.
+        Get all unique categories, pagination and search.
 
         Query parameters:
         - search: Filter categories by name
         - page: Page number (default: 1)
         - page_size: Items per page (default: 50, max: 200)
 
-        Returns categories with product counts for better UX.
+        Returns list of category names.
         """
-        # Use aggregation to count products per category efficiently (avoids N+1 query problem)
-        # Each retailer: 1 aggregation query instead of N count queries
+        # Get all unique categories from each retailer
+        saturn_categories = list(SaturnProduct.objects.distinct('category'))
+        mediamarkt_categories = list(MediaMarktProduct.objects.distinct('category'))
+        otto_categories = list(OttoProduct.objects.distinct('category'))
 
-        def get_category_counts(model):
-            """Get category counts using MongoDB aggregation"""
-            try:
-                pipeline = [
-                    {'$group': {'_id': '$category', 'count': {'$sum': 1}}},
-                    {'$sort': {'count': -1}}
-                ]
-                results = model.objects.aggregate(pipeline)
-                return {item['_id']: item['count'] for item in results if item['_id']}
-            except Exception as e:
-                logger.warning(f"Could not aggregate {model.__name__} categories: {e}")
-                return {}
-
-        # Get counts from all retailers (4 queries instead of N*4)
-        saturn_counts = get_category_counts(SaturnProduct)
-        mediamarkt_counts = get_category_counts(MediaMarktProduct)
-        otto_counts = get_category_counts(OttoProduct)
-        kaufland_counts = get_category_counts(KauflandProduct)
+        try:
+            kaufland_categories = list(KauflandProduct.objects.distinct('category'))
+        except Exception as e:
+            logger.warning(f"Could not get Kaufland categories: {e}")
+            kaufland_categories = []
 
         # Combine all unique categories
-        all_categories = set(
-            list(saturn_counts.keys()) +
-            list(mediamarkt_counts.keys()) +
-            list(otto_counts.keys()) +
-            list(kaufland_counts.keys())
-        )
-
-        # Build category list with counts
-        categories_with_count = []
-        for category in all_categories:
-            saturn_count = saturn_counts.get(category, 0)
-            mediamarkt_count = mediamarkt_counts.get(category, 0)
-            otto_count = otto_counts.get(category, 0)
-            kaufland_count = kaufland_counts.get(category, 0)
-            total_count = saturn_count + mediamarkt_count + otto_count + kaufland_count
-
-            categories_with_count.append({
-                'name': category,
-                'count': total_count,
-                'saturn_count': saturn_count,
-                'mediamarkt_count': mediamarkt_count,
-                'otto_count': otto_count,
-                'kaufland_count': kaufland_count
-            })
-
-        # Sort by product count (most popular first)
-        categories_with_count.sort(key=lambda x: x['count'], reverse=True)
+        all_categories = sorted(set(
+            saturn_categories +
+            mediamarkt_categories +
+            otto_categories +
+            kaufland_categories
+        ))
 
         # Filter by search query
         search = request.query_params.get('search', '').lower()
         if search:
-            categories_with_count = [
-                c for c in categories_with_count
-                if search in c['name'].lower()
-            ]
+            all_categories = [c for c in all_categories if search in c.lower()]
 
         # Pagination
         page = int(request.query_params.get('page', 1))
         page_size = min(int(request.query_params.get('page_size', 50)), 200)
 
-        total_count = len(categories_with_count)
+        total_count = len(all_categories)
         start = (page - 1) * page_size
         end = start + page_size
 
-        paginated_categories = categories_with_count[start:end]
+        paginated_categories = all_categories[start:end]
 
         # Calculate pagination info
         has_next = end < total_count

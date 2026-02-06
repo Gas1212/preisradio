@@ -266,7 +266,7 @@ class ProductViewSet(viewsets.ViewSet):
         }
         return serializers_map.get(retailer_name)
 
-    def _process_single_retailer(self, query, retailer_name, search, page_size, start):
+    def _process_single_retailer(self, query, retailer_name, search, page_size, start, sort='newest'):
         """Process products for a single retailer with relevance scoring and pagination
 
         Args:
@@ -275,6 +275,7 @@ class ProductViewSet(viewsets.ViewSet):
             search: Search query string
             page_size: Number of results per page
             start: Starting index for pagination
+            sort: Sort parameter ('price_asc', 'price_desc', 'newest')
 
         Returns:
             tuple: (page_products, total_count) where page_products is a list of (product, retailer_name) tuples
@@ -287,14 +288,26 @@ class ProductViewSet(viewsets.ViewSet):
         results = list(query.order_by('-scraped_at').limit(query_limit))
         total_count = query.count()
 
-        # Add relevance scores and sort by score (descending), then by date
+        # Add relevance scores and sort based on sort parameter
         products_with_scores = [
             (p, retailer_name, self._calculate_search_relevance(p, search))
             for p in results
         ]
-        products_with_scores.sort(
-            key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0))
-        )
+
+        # Sort based on sort parameter
+        if sort == 'price_asc':
+            products_with_scores.sort(
+                key=lambda x: (x[0].price, -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0))
+            )
+        elif sort == 'price_desc':
+            products_with_scores.sort(
+                key=lambda x: (-x[0].price, -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0))
+            )
+        else:
+            # Default: sort by relevance score (descending), then by date
+            products_with_scores.sort(
+                key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0))
+            )
 
         # Apply pagination after sorting
         end = start + page_size
@@ -313,8 +326,27 @@ class ProductViewSet(viewsets.ViewSet):
         page = int(request.query_params.get('page', 1))
         page_size = int(request.query_params.get('page_size', 20))
 
+        # Price filters
+        min_price = request.query_params.get('min_price', None)
+        max_price = request.query_params.get('max_price', None)
+
+        # Convert to float if provided
+        if min_price:
+            try:
+                min_price = float(min_price)
+            except (ValueError, TypeError):
+                min_price = None
+        if max_price:
+            try:
+                max_price = float(max_price)
+            except (ValueError, TypeError):
+                max_price = None
+
+        # Sort parameter: 'price_asc', 'price_desc', 'newest' (default)
+        sort = request.query_params.get('sort', 'newest')
+
         # Generate cache key based on query parameters
-        cache_params = f"{search}:{category}:{brand}:{retailer}:{page}:{page_size}"
+        cache_params = f"{search}:{category}:{brand}:{retailer}:{page}:{page_size}:{min_price}:{max_price}:{sort}"
         cache_key = f"products_list_{hashlib.md5(cache_params.encode()).hexdigest()}"
 
         # Determine cache duration based on request type
@@ -328,7 +360,7 @@ class ProductViewSet(viewsets.ViewSet):
             return Response(cached_response)
 
         # Build queries with filters using helper function
-        def build_query(model, category_filter, brand_filter, search_query):
+        def build_query(model, category_filter, brand_filter, search_query, min_price_filter=None, max_price_filter=None):
             """Build a filtered query for any product model"""
             query = model.objects()
             if category_filter:
@@ -345,12 +377,17 @@ class ProductViewSet(viewsets.ViewSet):
                     Q(description__icontains=search_query) |
                     Q(brand__icontains=search_query)
                 )
+            # Price filters
+            if min_price_filter is not None:
+                query = query.filter(price__gte=min_price_filter)
+            if max_price_filter is not None:
+                query = query.filter(price__lte=max_price_filter)
             return query
 
-        saturn_query = build_query(SaturnProduct, category, brand, search) if retailer in ['all', 'saturn'] else None
-        mediamarkt_query = build_query(MediaMarktProduct, category, brand, search) if retailer in ['all', 'mediamarkt'] else None
-        otto_query = build_query(OttoProduct, category, brand, search) if retailer in ['all', 'otto'] else None
-        kaufland_query = build_query(KauflandProduct, category, brand, search) if retailer in ['all', 'kaufland'] else None
+        saturn_query = build_query(SaturnProduct, category, brand, search, min_price, max_price) if retailer in ['all', 'saturn'] else None
+        mediamarkt_query = build_query(MediaMarktProduct, category, brand, search, min_price, max_price) if retailer in ['all', 'mediamarkt'] else None
+        otto_query = build_query(OttoProduct, category, brand, search, min_price, max_price) if retailer in ['all', 'otto'] else None
+        kaufland_query = build_query(KauflandProduct, category, brand, search, min_price, max_price) if retailer in ['all', 'kaufland'] else None
 
         # Apply pagination
         start = (page - 1) * page_size
@@ -365,7 +402,7 @@ class ProductViewSet(viewsets.ViewSet):
             }
             query = query_map.get(retailer)
             page_products, total_count = self._process_single_retailer(
-                query, retailer, search, page_size, start
+                query, retailer, search, page_size, start, sort
             )
 
         else:
@@ -415,8 +452,16 @@ class ProductViewSet(viewsets.ViewSet):
             products += [(p, 'otto', self._calculate_search_relevance(p, search)) for p in otto_results]
             products += [(p, 'kaufland', self._calculate_search_relevance(p, search)) for p in kaufland_results]
 
-            # Sort by relevance score (descending), then by date (most recent first)
-            products.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+            # Sort based on sort parameter
+            if sort == 'price_asc':
+                # Sort by price ascending
+                products.sort(key=lambda x: (x[0].price, -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+            elif sort == 'price_desc':
+                # Sort by price descending
+                products.sort(key=lambda x: (-x[0].price, -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
+            else:
+                # Default: sort by relevance score (descending), then by date (most recent first)
+                products.sort(key=lambda x: (-x[2], -(x[0].scraped_at.timestamp() if x[0].scraped_at else 0)))
 
             # Apply pagination on the sorted results
             end = start + page_size

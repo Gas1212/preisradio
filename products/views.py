@@ -559,6 +559,69 @@ class ProductViewSet(viewsets.ViewSet):
         })
 
     @action(detail=False, methods=['get'])
+    def brands(self, request):
+        """
+        Get all unique brands, pagination and search.
+
+        Query parameters:
+        - search: Filter brands by name
+        - page: Page number (default: 1)
+        - page_size: Items per page (default: 50, max: 200)
+
+        Returns list of brand names.
+        """
+        # Get all unique brands from each retailer
+        saturn_brands = list(SaturnProduct.objects.distinct('brand'))
+        mediamarkt_brands = list(MediaMarktProduct.objects.distinct('brand'))
+        otto_brands = list(OttoProduct.objects.distinct('brand'))
+
+        try:
+            kaufland_brands = list(KauflandProduct.objects.distinct('brand'))
+        except Exception as e:
+            logger.warning(f"Could not get Kaufland brands: {e}")
+            kaufland_brands = []
+
+        # Combine all unique brands and filter out None/empty values
+        all_brands = sorted(set(
+            b for b in (
+                saturn_brands +
+                mediamarkt_brands +
+                otto_brands +
+                kaufland_brands
+            )
+            if b and b.strip()  # Filter out None and empty strings
+        ))
+
+        # Filter by search query
+        search = request.query_params.get('search', '').lower()
+        if search:
+            all_brands = [b for b in all_brands if search in b.lower()]
+
+        # Pagination
+        page = int(request.query_params.get('page', 1))
+        page_size = min(int(request.query_params.get('page_size', 50)), 200)
+
+        total_count = len(all_brands)
+        start = (page - 1) * page_size
+        end = start + page_size
+
+        paginated_brands = all_brands[start:end]
+
+        # Calculate pagination info
+        has_next = end < total_count
+        has_prev = page > 1
+
+        return Response({
+            'count': total_count,
+            'next': f'?page={page + 1}&page_size={page_size}&search={search}' if has_next else None,
+            'previous': f'?page={page - 1}&page_size={page_size}&search={search}' if has_prev else None,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_count + page_size - 1) // page_size,
+            'results': paginated_brands
+        })
+
+    @action(detail=False, methods=['get'])
     def by_gtin(self, request):
         """Get products by GTIN (cross-retailer comparison)"""
         gtin = request.query_params.get('gtin', '')
@@ -769,13 +832,24 @@ class ProductViewSet(viewsets.ViewSet):
         Compatible with Google Shopping and other shopping platforms.
 
         Usage: GET /api/products/google_merchant_feed/
+
+        NOTE: Temporarily disabled due to performance issues (loading all products without limit)
+        """
+        # TEMPORARILY DISABLED - Performance issue: loads all products without limit
+        return HttpResponse(
+            '<?xml version="1.0"?><error>This endpoint is temporarily disabled for optimization. Please use /api/products/sitemap/ instead.</error>',
+            content_type='application/xml',
+            status=503
+        )
+
+        # Original code commented out until optimization is complete
         """
         try:
-            # Fetch all products
-            saturn_products = list(SaturnProduct.objects.order_by('-scraped_at'))
-            mediamarkt_products = list(MediaMarktProduct.objects.order_by('-scraped_at'))
-            otto_products = list(OttoProduct.objects.order_by('-scraped_at'))
-            kaufland_products = list(KauflandProduct.objects.order_by('-scraped_at'))
+            # Fetch all products (limited to 10000 to prevent memory issues)
+            saturn_products = list(SaturnProduct.objects.order_by('-scraped_at').limit(10000))
+            mediamarkt_products = list(MediaMarktProduct.objects.order_by('-scraped_at').limit(10000))
+            otto_products = list(OttoProduct.objects.order_by('-scraped_at').limit(10000))
+            kaufland_products = list(KauflandProduct.objects.order_by('-scraped_at').limit(10000))
 
             # Create RSS XML structure
             rss = Element('rss', {
@@ -861,6 +935,7 @@ class ProductViewSet(viewsets.ViewSet):
                 content_type='application/xml',
                 status=500
             )
+        """
 
     @action(detail=False, methods=['post'])
     def sync_to_google_merchant(self, request):

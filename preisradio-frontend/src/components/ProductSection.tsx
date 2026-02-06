@@ -111,7 +111,7 @@ export default function ProductSection({
                   >
                     <AdSenseInFeed
                       adSlot="6399181253"
-                      layoutKey="+2t+rs+1r-2b-1u"
+                      layoutKey="-d4+0+1r-2b-1u"
                       className="h-full"
                     />
                   </div>

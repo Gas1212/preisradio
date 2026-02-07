@@ -12,6 +12,7 @@ export default function PWAInstall() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Check if already installed (works for Android/Desktop)
@@ -21,11 +22,23 @@ export default function PWAInstall() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
+    // Check if Android
+    const isAndroid = /Android/.test(navigator.userAgent);
+
+    // Detect if mobile device (only show install prompt on mobile)
+    const mobile = iOS || isAndroid;
+    setIsMobile(mobile);
+
     // Check if installed on iOS (navigator.standalone)
     const isIOSInstalled = iOS && (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
 
     if (isStandalone || isIOSInstalled) {
       setIsInstalled(true);
+      return;
+    }
+
+    // Only show install prompt on mobile devices
+    if (!mobile) {
       return;
     }
 
@@ -40,7 +53,7 @@ export default function PWAInstall() {
       return;
     }
 
-    // Listen for the beforeinstallprompt event (Android/Desktop)
+    // Listen for the beforeinstallprompt event (Android only, not desktop)
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -90,8 +103,8 @@ export default function PWAInstall() {
     localStorage.setItem('pwa-install-dismissed', 'true');
   };
 
-  // Don't show if installed or no prompt available
-  if (isInstalled || (!showInstallPrompt && !isIOS)) {
+  // Don't show if installed, not mobile, or no prompt available
+  if (isInstalled || !isMobile || (!showInstallPrompt && !isIOS)) {
     return null;
   }
 

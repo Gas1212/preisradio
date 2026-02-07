@@ -20,11 +20,25 @@ export default function MarkenPage() {
     try {
       setLoading(true);
 
-      // Use the new /products/brands/ endpoint instead of loading all products
-      const response = await api.getBrands({ page_size: 1000 });
-      const brandNames = response?.results || [];
+      // Load all brands by fetching multiple pages (API limit is 200 per page)
+      const firstResponse = await api.getBrands({ page_size: 200, page: 1 });
+      const totalPages = firstResponse?.total_pages || 1;
+      let allBrands = firstResponse?.results || [];
 
-      setBrands(brandNames);
+      // If there are more pages, fetch them in parallel
+      if (totalPages > 1) {
+        const pagePromises = [];
+        for (let page = 2; page <= totalPages; page++) {
+          pagePromises.push(api.getBrands({ page_size: 200, page }));
+        }
+
+        const responses = await Promise.all(pagePromises);
+        responses.forEach(response => {
+          allBrands = [...allBrands, ...(response?.results || [])];
+        });
+      }
+
+      setBrands(allBrands);
     } catch (err) {
       console.error('Error loading brands:', err);
     } finally {

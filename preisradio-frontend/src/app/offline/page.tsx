@@ -1,14 +1,6 @@
-import { Metadata } from 'next';
-import Link from 'next/link';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Offline | Preisradio',
-  description: 'Keine Internetverbindung',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
+import Link from 'next/link';
 
 export default function OfflinePage() {
   return (
